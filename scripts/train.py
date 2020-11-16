@@ -14,7 +14,8 @@ parser.add_argument('-e', '--num-epochs', default=10000, type=int,
 parser.add_argument('-iss', '--image-save-step', default=100, type=int,
                     help='The image saving step.')
 parser.add_argument('-k', '--true-kernel', default=None)
-parser.add_argument('-l', '--kernel-length', default=21, type=int)
+parser.add_argument('-kl', '--kernel-length', default=21, type=int)
+parser.add_argument('-lr', '--learning-rate', default=2e-4, type=float)
 parser.add_argument('-na', '--no-aug', action='store_true')
 parser.add_argument('-w', '--num-workers', default=0, type=int)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
