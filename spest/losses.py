@@ -68,10 +68,9 @@ class SmoothnessLoss(torch.nn.Module):
     def forward(self, kernel):
         device = kernel.device
         operator = torch.tensor([1, -1], dtype=torch.float32, device=device)
-        operator = operator[None, None, ...]
-        kernel = kernel[None, ...]
-        derivative = F.conv1d(kernel, operator)
-        loss = torch.sum(derivative ** 2)
+        operator = operator[None, None, ..., None]
+        derivative = F.conv2d(kernel, operator)
+        loss = torch.sqrt(torch.sum(derivative ** 2))
         return loss
 
 
@@ -120,16 +119,12 @@ class BoundaryLoss(torch.nn.Module):
         super().__init__()
         self.kernel_length = kernel_length
         mask = torch.tensor(self._create_penalty_mask()).float()
-        self.register_buffer('mask', mask[None, ...])
+        self.register_buffer('mask', mask[None, None, ..., None])
 
     def _create_penalty_mask(self):
-        center = self.kernel_length // 2
-        locs = np.arange(self.kernel_length) - center
-        mask = np.exp(-locs ** 2 / (2 * self.kernel_length ** 2))
-        mask = 1 - mask / np.max(mask)
-        margin = (self.kernel_length - center) // 2 - 2
-        mask[margin:-margin] = 0
-        return 30 * mask
+        mask = torch.ones(self.kernel_length).float()
+        mask[2:-2] = 0
+        return mask
 
     def forward(self, kernel):
         return torch.sum(torch.abs(kernel * self.mask))

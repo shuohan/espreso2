@@ -19,6 +19,7 @@ def test_networks():
 
     kn = KernelNet().cuda()
     print(kn)
+    assert kn.kernel_cuda.shape == (1, 1, 21, 1)
     assert kn(image_cuda).shape == (1, 1, 492, 512)
     assert torch.sum(kn.kernel_cuda) == 1
     kn_dot = make_dot(image_cuda, kn)

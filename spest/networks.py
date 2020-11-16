@@ -80,6 +80,7 @@ class KernelNet(nn.Sequential):
         kernel = self.input_clamp(self.input_weight)
         for module in self:
             kernel = module(kernel)
+        kernel = kernel.view(1, 1, -1, 1)
         return kernel
 
     def update_kernel(self):
@@ -127,8 +128,7 @@ class KernelNet(nn.Sequential):
             % str(tuple(self.input_weight.size()))
 
     def forward(self, x):
-        kernel = self.kernel_cuda.view(1, 1, -1, 1)
-        return F.conv2d(x, kernel)
+        return F.conv2d(x, self.kernel_cuda)
 
 
 class LowResDiscriminator(nn.Sequential):
