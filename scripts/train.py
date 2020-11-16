@@ -5,7 +5,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', help='Input image.')
 parser.add_argument('-o', '--output', help='Output directory.')
-parser.add_argument('-b', '--batch-size', default=32, type=int,
+parser.add_argument('-bs', '--batch-size', default=32, type=int,
                     help='The number of samples per mini-batch.')
 parser.add_argument('-s', '--scale-factor', default=None, type=float,
                     help='Super resolution scale factor.')
@@ -73,9 +73,9 @@ config.add_config('output_dirname', os.path.abspath(str(args.output)))
 
 kn = KernelNet().cuda()
 lrd = LowResDiscriminator().cuda()
-kn_optim = Adam(kn.parameters(), lr=2e-4, betas=(0.5, 0.999),
+kn_optim = Adam(kn.parameters(), lr=config.learning_rate, betas=(0.5, 0.999),
                 weight_decay=config.weight_decay)
-lrd_optim = Adam(lrd.parameters(), lr=2e-4, betas=(0.5, 0.999))
+lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
 
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,

@@ -235,7 +235,7 @@ class TrainerHRtoLR(Trainer):
 
         self.kn_gan_loss = -self._gan_loss_func(self._lrd_pred_kn, False)
         self.kn_gan_perm_loss = -self._gan_loss_func(self._lrd_pred_kn_perm, True)
-        self.kn_tot_loss = self.kn_gan_loss + self.kn_gan_perm_loss + self._calc_reg()
+        self.kn_tot_loss = 0.5 * (self.kn_gan_loss + self.kn_gan_perm_loss) + self._calc_reg()
         self.kn_tot_loss.backward()
 
         self.kn_optim.step()
