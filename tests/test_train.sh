@@ -28,5 +28,5 @@ for image in ${images[@]}; do
         -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir:$simu_dir \
         -w $psf_est_dir/scripts -t \
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
-        ./train.py -i $image -o $outdir -k $kernel -l 21 -isz 4
+        ./train.py -i $image -o $outdir -k $kernel -kl 19 -isz 4 -e 100
 done
