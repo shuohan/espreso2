@@ -18,6 +18,7 @@ parser.add_argument('-kl', '--kernel-length', default=21, type=int)
 parser.add_argument('-lr', '--learning-rate', default=2e-4, type=float)
 parser.add_argument('-na', '--no-aug', action='store_true')
 parser.add_argument('-w', '--num-workers', default=0, type=int)
+parser.add_argument('-sw', '--smoothness-loss-weight', default=1.0, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
 parser.add_argument('-lrdk', '--lrd-kernel-size', default=(3, 1),
@@ -100,11 +101,10 @@ print('----------')
 print(patches)
 
 trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, dataloader)
-queue = DataQueue(['kn_gan_loss', 'kn_gan_perm_loss', 'smoothness_loss',
-                   'center_loss', 'boundary_loss', 'kn_tot_loss', 'lrd_tot_loss'])
+queue = DataQueue(['kn_gan_loss', 'smoothness_loss', 'center_loss',
+                   'boundary_loss', 'kn_tot_loss', 'lrd_tot_loss'])
 printer = EpochPrinter(print_sep=False, decimals=2)
 logger = EpochLogger(log_output)
-
 
 true_kernel = None
 if args.true_kernel is not None:
@@ -122,14 +122,15 @@ if args.true_kernel is not None:
     evaluator.register(eval_queue)
     trainer.register(evaluator)
 
-attrs = ['lrd_patch', 'lrd_blur', 'lrd_alias', 'lrd_perm',
-         'kn_patch', 'kn_blur', 'kn_alias', 'kn_perm']
+attrs = ['lrd_real', 'lrd_real_blur', 'lrd_real_alias',
+         'lrd_fake', 'lrd_fake_blur', 'lrd_fake_alias',
+         'kn_patch', 'kn_blur', 'kn_alias']
 im_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
                       file_struct='epoch/sample', save_type='png_norm',
                       save_init=False, prefix='patch',
                       zoom=config.image_save_zoom, ordered=True)
 
-attrs = ['lrd_pred_real', 'lrd_pred_fake', 'lrd_pred_kn', 'lrd_pred_kn_perm']
+attrs = ['lrd_pred_real', 'lrd_pred_fake', 'lrd_pred_kn']
 pred_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
                         file_struct='epoch/sample', save_type='png',
                         image_type='sigmoid', save_init=False, prefix='lrd',

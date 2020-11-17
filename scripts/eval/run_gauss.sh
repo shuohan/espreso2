@@ -20,7 +20,7 @@ images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORON
 
 lr=2e-4
 bs=32
-ne=10000
+ne=30000
 lrdk=(3 3)
 
 for image in ${images[@]}; do
@@ -28,12 +28,12 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../results/simu_lr-${lr}_bs-${bs}_lrdk-${lrdk[0]}-${lrdk[1]}/${kernel}_${fwhm}_${scale}_${len}
+    outdir=../results/simu_lr-${lr}_bs-${bs}_lrdk-${lrdk[0]}-${lrdk[1]}_stage/${kernel}_${fwhm}_${scale}_${len}
     if [ -f $outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-    echo docker run --gpus device=0 --rm \
+    echo docker run --gpus device=1 --rm \
         -v $psf_est_dir:$psf_est_dir \
         -v $sssrlib_dir:$sssrlib_dir \
         -v $proc_dir:$proc_dir \
@@ -45,6 +45,6 @@ for image in ${images[@]}; do
         -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir:$simu_dir \
         -w $psf_est_dir/scripts -t \
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
-        ./train.py -i $image -o $outdir -k $kernel -kl 19 \
+        ./train.py -i $image -o $outdir -k $kernel -kl 19 -sw 1 \
         -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[0]} ${lrdk[1]}
 done | rush -j 3 {}

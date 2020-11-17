@@ -47,3 +47,5 @@ class Config(Config_):
         self.add_config('image_save_zoom', 1)
         self.add_config('lrd_kernel_size', (3, 1))
         self.add_config('learning_rate', 1e-4)
+        self.add_config('learning_rate', 1e-4)
+        self.add_config('num_epochs_per_stage', 10000)

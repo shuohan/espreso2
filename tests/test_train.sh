@@ -8,7 +8,9 @@ trainer_dir=~/Code/shuo/deep-networks/pytorch-trainer
 simu_dir=~/Code/shuo/utils/lr-simu
 data_dir=/data
 
-images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_type-gauss_fwhm-8p0_scale-0p5_len-13.nii)
+images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
+        /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
+        /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_type-gauss_fwhm-8p0_scale-0p25_len-13.nii)
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")
@@ -28,5 +30,5 @@ for image in ${images[@]}; do
         -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir:$simu_dir \
         -w $psf_est_dir/scripts -t \
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
-        ./train.py -i $image -o $outdir -k $kernel -kl 19 -isz 4 -e 100
-done
+        ./train.py -i $image -o $outdir -k $kernel -kl 19 -isz 4 -e 30000 -sw 0.1
+done # | rush -j 3 {}
