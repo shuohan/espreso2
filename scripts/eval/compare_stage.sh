@@ -21,28 +21,19 @@ scale=(0p25 0p5)
 #     done
 # done
 
-# for f in ${fwhm[@]}; do
-#     for s in ${scale[@]}; do
-#     ./plot_curves.py -i \
-#         ../../results/simu_lr-2e-4_bs-32_lrdk-3-1_ne-9000_ns-3000_sw-1/type-gauss_fwhm-${f}_scale-${s}_len-13/evseg_segal_loss.csv \
-#         ../../results/simu_lr-2e-4_bs-32_lrdk-3-1_ne-9000_ns-9000_sw-1/type-gauss_fwhm-${f}_scale-${s}_len-13/evseg_segal_loss.csv \
-#         -x epoch -y mae -n \
-#         ne-9000_ns-3000_sw-1 \
-#         ne-9000_ns-9000_sw-1 \
-#         -m 3000 6000 9000 \
-#         -o $dir/ne-9000_ns-3000_fwhm-${f}_scale-${s}.png
-#     done
-# done
-
 for f in ${fwhm[@]}; do
     for s in ${scale[@]}; do
     ./plot_curves.py -i \
-        ../../results/simu_lr-2e-4_bs-32_lrdk-3-1_ne-10000_ns-2000_sw-1/type-gauss_fwhm-${f}_scale-${s}_len-13/evseg_segal_loss.csv \
         ../../results/simu_lr-2e-4_bs-32_lrdk-3-1_ne-9000_ns-9000_sw-1/type-gauss_fwhm-${f}_scale-${s}_len-13/evseg_segal_loss.csv \
+        ../../results/simu_lr-2e-4_bs-32_lrdk-3-1_ne-9000_ns-3000_sw-1/type-gauss_fwhm-${f}_scale-${s}_len-13/evseg_segal_loss.csv \
+        ../../results/simu_lr-2e-4_bs-32_lrdk-3-1_ne-10000_ns-2000_sw-1/type-gauss_fwhm-${f}_scale-${s}_len-13/evseg_segal_loss.csv \
         -x epoch -y mae -n \
-        ne-10000_ns-2000_sw-1 \
         ne-9000_ns-9000_sw-1 \
-        -m 2000 4000 6000 10000 \
-        -o $dir/ne-9000_ns-3000_fwhm-${f}_scale-${s}.png
+        ne-9000_ns-3000_sw-1 \
+        ne-10000_ns-2000_sw-1 \
+        -m 3000 6000 9000 \
+        -m 2000 4000 6000 8000 10000 \
+        -o $dir/ne-9000_ns-3000_fwhm-${f}_scale-${s}.png \
+        -yl 0 0.02
     done
 done
