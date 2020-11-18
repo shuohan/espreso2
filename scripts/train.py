@@ -23,6 +23,7 @@ parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
 parser.add_argument('-lrdk', '--lrd-kernel-size', default=(3, 1),
                     type=int, nargs=2)
+parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
 args = parser.parse_args()
 
 
