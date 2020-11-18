@@ -105,6 +105,23 @@ queue = DataQueue(['kn_gan_loss', 'kn_gan_perm_loss', 'smoothness_loss',
 printer = EpochPrinter(print_sep=False, decimals=2)
 logger = EpochLogger(log_output)
 
+
+true_kernel = None
+if args.true_kernel is not None:
+    true_kernel = np.load(args.true_kernel)
+    true_kernel = true_kernel.squeeze()
+    left_pad = (config.kernel_length - len(true_kernel)) // 2
+    right_pad = config.kernel_length - len(true_kernel) - left_pad
+    true_kernel = np.pad(true_kernel, (left_pad, right_pad))
+    evaluator = KernelEvaluator(true_kernel, config.kernel_length).cuda()
+    eval_queue = DataQueue(['mae'])
+    eval_printer = EpochPrinter(print_sep=False)
+    eval_logger = EpochLogger(eval_log_output)
+    eval_queue.register(eval_printer)
+    eval_queue.register(eval_logger)
+    evaluator.register(eval_queue)
+    trainer.register(evaluator)
+
 attrs = ['lrd_patch', 'lrd_blur', 'lrd_alias', 'lrd_perm',
          'kn_patch', 'kn_blur', 'kn_alias', 'kn_perm']
 im_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
@@ -119,18 +136,7 @@ pred_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
                         zoom=config.image_save_zoom, ordered=True)
 
 kernel_saver = KernelSaver(kernel_output, step=config.image_save_step,
-                           save_init=True)
-
-if args.true_kernel is not None:
-    true_kernel = np.load(args.true_kernel)
-    evaluator = KernelEvaluator(true_kernel, config.kernel_length).cuda()
-    eval_queue = DataQueue(['mae'])
-    eval_printer = EpochPrinter(print_sep=False)
-    eval_logger = EpochLogger(eval_log_output)
-    eval_queue.register(eval_printer)
-    eval_queue.register(eval_logger)
-    evaluator.register(eval_queue)
-    trainer.register(evaluator)
+                           save_init=True, truth=true_kernel)
 
 queue.register(printer)
 queue.register(logger)

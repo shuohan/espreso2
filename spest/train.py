@@ -23,6 +23,10 @@ class SaveKernel(SavePlot):
     """Saves the kernel to a .png and a .npy files.
 
     """
+    def __init__(self, truth=None):
+        super().__init__()
+        self.truth = truth
+
     def save(self, filename, kernel):
         kernel = kernel.squeeze().numpy()
         self._save_plot(filename, kernel)
@@ -37,9 +41,14 @@ class SaveKernel(SavePlot):
         fwhm, left, right = calc_fwhm(kernel)
         max_val = np.max(kernel)
         plt.cla()
+
+        if self.truth is not None:
+            plt.plot(self.truth, '-', color='tab:green')
+
         plt.plot(kernel, '-o')
         plt.plot([left, right], [max_val / 2] * 2, 'x--', color='tab:red')
         plt.text((left + right) / 2, max_val / 4, fwhm, ha='center')
+
         plt.grid(True)
         plt.tight_layout()
         plt.gcf().savefig(filename)
@@ -49,13 +58,14 @@ class KernelSaver(ThreadedSaver):
     """Saves the kernel after each epoch.
 
     """
-    def __init__(self, dirname, step=100, save_init=False):
+    def __init__(self, dirname, step=100, save_init=False, truth=None):
+        self.truth = truth
         super().__init__(dirname, save_init=save_init)
         self.step = step
         Path(self.dirname).mkdir(parents=True, exist_ok=True)
 
     def _init_thread(self):
-        save_kernel = SaveKernel()
+        save_kernel = SaveKernel(truth=self.truth)
         return ImageThread(save_kernel, self.queue)
 
     def _check_subject_type(self, subject):
