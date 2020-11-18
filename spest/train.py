@@ -221,7 +221,7 @@ class TrainerHRtoLR(Trainer):
             self._train_lr_disc()
             if self.epoch_ind % Config().kn_update_step == 0:
                 self._train_kernel_net()
-            if (self.epoch_ind + 1) % Config().num_epochs_per_stage == 0:
+            if self.epoch_ind % Config().num_epochs_per_stage == 0:
                 print('Update stage kernel')
                 self._stage_kernel = self.kernel_net.avg_kernel.detach()
 
