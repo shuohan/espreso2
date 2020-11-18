@@ -9,6 +9,7 @@ parser.add_argument('-m', '--markers', nargs='+', type=int)
 parser.add_argument('-x', '--x-column-name')
 parser.add_argument('-y', '--y-column-name')
 parser.add_argument('-o', '--output-file')
+parser.add_argument('-yl', '--ylim', type=float, nargs=2)
 args = parser.parse_args()
 
 
@@ -37,6 +38,9 @@ if args.markers is not None:
     ys = [y] * len(args.markers)
     print(args.markers, ys)
     plt.stem(args.markers, ys, linefmt='k--', markerfmt=' ', basefmt=' ')
+
+if args.ylim is not None:
+    plt.ylim(args.ylim)
 
 plt.grid(True)
 fig.savefig(args.output_file)
