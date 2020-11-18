@@ -5,10 +5,11 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input-files', nargs='+')
 parser.add_argument('-n', '--names', nargs='+')
-parser.add_argument('-m', '--markers', nargs='+', type=int)
+parser.add_argument('-m', '--markers', nargs='+', type=int, action='append')
 parser.add_argument('-x', '--x-column-name')
 parser.add_argument('-y', '--y-column-name')
 parser.add_argument('-o', '--output-file')
+parser.add_argument('-yl', '--ylim', type=float, nargs=2)
 args = parser.parse_args()
 
 
@@ -33,10 +34,16 @@ if args.names is not None:
     plt.legend(args.names)
 
 if args.markers is not None:
-    y = plt.gca().get_ylim()[1]
-    ys = [y] * len(args.markers)
-    print(args.markers, ys)
-    plt.stem(args.markers, ys, linefmt='k--', markerfmt=' ', basefmt=' ')
+    for markers, color in zip(args.markers, colors[::-1]):
+        ylim = plt.gca().get_ylim()
+        y = ylim[1]
+        ys = [y] * len(markers)
+        ml, sl, bl = plt.stem(markers, ys, linefmt='--', markerfmt=' ', basefmt=' ')
+        plt.setp(sl, 'color', color)
+        plt.ylim(ylim)
+
+if args.ylim is not None:
+    plt.ylim(args.ylim)
 
 plt.grid(True)
 fig.savefig(args.output_file)
