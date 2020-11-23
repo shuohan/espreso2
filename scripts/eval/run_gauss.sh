@@ -8,9 +8,9 @@ trainer_dir=~/Code/shuo/deep-networks/pytorch-trainer
 simu_dir=~/Code/shuo/utils/lr-simu
 data_dir=/data
 
-images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
-        /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
-        /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-2p0_scale-0p25_len-13.nii)
+images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-8p0_scale-0p125_len-13.nii
+        /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
+        /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-2p0_scale-0p125_len-13.nii)
 # images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-8p0_scale-0p5_len-13.nii
 #         /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
 #         /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-2p0_scale-0p5_len-13.nii)
