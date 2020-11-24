@@ -20,8 +20,8 @@ images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORON
 
 lr=2e-4
 bs=32
-ne=10000
-ns=2000
+ne=9000
+ns=3000
 lrdk=(3 1)
 sw=1
 sw_str=$(echo $sw | sed "s/\./p/")
@@ -31,7 +31,7 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../results/simu_lr-${lr}_bs-${bs}_lrdk-${lrdk[0]}-${lrdk[1]}_ne-${ne}_ns-${ns}_sw-${sw_str}_sf-4/${kernel}_${fwhm}_${scale}_${len}
+    outdir=../results/simu_lr-${lr}_bs-${bs}_lrdk-${lrdk[0]}-${lrdk[1]}_ne-${ne}_ns-${ns}_sw-${sw_str}/${kernel}_${fwhm}_${scale}_${len}
     if [ -f $outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
@@ -50,5 +50,5 @@ for image in ${images[@]}; do
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
         ./train.py -i $image -o $outdir -k $kernel -kl 19 -sw ${sw} \
         -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[0]} ${lrdk[1]} \
-        -ns ${ns} -s 4
+        -ns ${ns}
 done | rush -j 3 {}
