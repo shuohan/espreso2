@@ -26,7 +26,7 @@ class Config(Config_):
     def __init__(self):
         super().__init__()
         self.add_config('kn_num_channels', 1024)
-        self.add_config('kn_num_linears', 4)
+        self.add_config('kn_num_convs', 6)
         self.add_config('kn_update_step', 1)
         self.add_config('kernel_avg_beta', 0.99)
         self.add_config('kernel_length', 19)
@@ -45,5 +45,5 @@ class Config(Config_):
         self.add_config('image_save_step', 100)
         self.add_config('eval_step', 100)
         self.add_config('image_save_zoom', 1)
-        self.add_config('lrd_kernel_size', (3, 3))
+        self.add_config('lrd_kernel_size', (3, 1))
         self.add_config('learning_rate', 1e-4)

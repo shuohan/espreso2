@@ -19,11 +19,16 @@ def test_networks():
 
     kn = KernelNet().cuda()
     print(kn)
-    assert kn.kernel_cuda.shape == (1, 1, 21, 1)
-    assert kn(image_cuda).shape == (1, 1, 492, 512)
-    assert torch.sum(kn.kernel_cuda) == 1
+    assert kn.kernel_cuda.shape == (1, 1, 19, 1)
+    assert kn(image_cuda).shape == (1, 1, 494, 512)
+    assert torch.isclose(torch.sum(kn.kernel_cuda), torch.tensor(1).float())
     kn_dot = make_dot(image_cuda, kn)
     kn_dot.render(dirname.joinpath('kn'))
+
+    fig = plt.figure()
+    kernel = kn.kernel.numpy().squeeze()
+    plt.plot(kernel)
+    fig.savefig(dirname.joinpath('kernel.png'))
 
     lrd = LowResDiscriminator().cuda()
     print(lrd)
