@@ -181,27 +181,35 @@ class TrainerHRtoLR(Trainer):
         self.center_loss = np.nan
         self.boundary_loss = np.nan
         self.kn_tot_loss = np.nan
-        self.lrd_tot_loss = np.nan
+        self.lrd_gan_loss = np.nan
 
-        self._kn_patch = None
-        self._kn_patch_names = None
+        self._kn_in = None
+        self._kn_in_names = None
         self._kn_blur = None
         self._kn_alias = None
+        self._kn_prob = None
+
+        self._kn_t_in = None
+        self._kn_t_names = None
+        self._kn_t_blur = None
+        self._kn_t_alias = None
+        self._kn_t_alias_t = None
+        self._kn_t_prob = None
 
         self._lrd_real_names = None
         self._lrd_real = None
         self._lrd_real_blur = None
         self._lrd_real_alias = None
+        self._lrd_real_alias_t = None
+        self._lrd_real_prob = None
 
         self._lrd_fake_names = None
         self._lrd_fake = None
         self._lrd_fake_blur = None
         self._lrd_fake_alias = None
+        self._lrd_fake_prob = None
 
         self._batch_ind = -1
-
-        self._stage_kernel = torch.zeros_like(self.kernel_net.kernel_cuda)
-        self._stage_kernel[:, :, Config().kernel_length//2, :] = 1
 
     def get_model_state_dict(self):
         return {'kernel_net': self.kernel_net.state_dict(),
@@ -221,9 +229,6 @@ class TrainerHRtoLR(Trainer):
             self._train_lr_disc()
             if self.epoch_ind % Config().kn_update_step == 0:
                 self._train_kernel_net()
-            if self.epoch_ind % Config().num_epochs_per_stage == 0:
-                print('Update stage kernel')
-                self._stage_kernel = self.kernel_net.avg_kernel.detach()
 
             self.notify_observers_on_batch_end()
             self.notify_observers_on_epoch_end()
@@ -235,18 +240,27 @@ class TrainerHRtoLR(Trainer):
         """
         self.kn_optim.zero_grad()
         for batch in self.dataloader:
-            self._kn_patch_names = batch.name
-            self._kn_patch = batch.data
+            self._kn_in_names = batch.name
+            self._kn_in = batch.data
+        for batch in self.dataloader: # transpose
+            self._kn_t_in_names = batch.name
+            self._kn_t_in = batch.data
 
-        self._kn_blur = self.kernel_net(self._kn_patch)
+        self._kn_blur = self.kernel_net(self._kn_in)
         self._kn_alias = self._create_aliasing(self._kn_blur)
-        self._lrd_pred_kn = self.lr_disc(self._kn_alias)
+        self._kn_prob = self.lr_disc(self._kn_alias)
 
-        self.kn_gan_loss = self._gan_loss_func(self._lrd_pred_kn, True)
+        self._kn_t_blur = self.kernel_net(self._kn_t_in)
+        self._kn_t_alias = self._create_aliasing(self._kn_t_blur)
+        self._kn_t_alias_t = self._kn_t_alias.permute(0, 1, 3, 2)
+        self._kn_t_prob = self.lr_disc(self._kn_t_alias_t)
+
+        self.kn_gan_loss = (self._gan_loss_func(self._kn_prob, True) \
+            + self._gan_loss_func(self._kn_t_prob, False)) / 2
         self.kn_tot_loss = self.kn_gan_loss + self._calc_reg()
         self.kn_tot_loss.backward()
-
         self.kn_optim.step()
+
         self.kernel_net.update_kernel()
 
     def _create_aliasing(self, patches):
@@ -280,16 +294,15 @@ class TrainerHRtoLR(Trainer):
         with torch.no_grad():
             self._lrd_fake_blur = self.kernel_net(self._lrd_fake)
             self._lrd_fake_alias = self._create_aliasing(self._lrd_fake_blur)
-            self._lrd_real_blur = F.conv2d(self._lrd_real, self._stage_kernel)
+            self._lrd_real_blur = self.kernel_net(self._lrd_real)
             self._lrd_real_alias = self._create_aliasing(self._lrd_real_blur)
-            self._lrd_real_alias = self._lrd_real_alias.permute(0, 1, 3, 2)
+            self._lrd_real_alias_t = self._lrd_real_alias.permute(0, 1, 3, 2)
+        self._lrd_fake_prob = self.lr_disc(self._lrd_fake_alias.detach())
+        self._lrd_real_prob = self.lr_disc(self._lrd_real_alias_t.detach())
 
-        self._lrd_pred_fake = self.lr_disc(self._lrd_fake_alias.detach())
-        self._lrd_pred_real = self.lr_disc(self._lrd_real_alias.detach())
-        self._lrd_fake_loss = self._gan_loss_func(self._lrd_pred_fake, False)
-        self._lrd_real_loss = self._gan_loss_func(self._lrd_pred_real, True)
-        self.lrd_tot_loss = self._lrd_real_loss + self._lrd_fake_loss
-        self.lrd_tot_loss.backward()
+        self.lrd_gan_loss = (self._gan_loss_func(self._lrd_fake_prob, False) \
+            + self._gan_loss_func(self._lrd_real_prob, True)) / 2
+        self.lrd_gan_loss.backward()
         self.lrd_optim.step()
 
     @property
@@ -330,14 +343,19 @@ class TrainerHRtoLR(Trainer):
         return self._lrd_real_alias.detach().cpu()
 
     @property
+    def lrd_real_alias_t(self):
+        """Returns the current aliased real lrd patches on CPU."""
+        return self._lrd_real_alias_t.detach().cpu()
+
+    @property
     def lrd_fake_alias(self):
         """Returns the current aliased fake lrd patches on CPU."""
         return self._lrd_fake_alias.detach().cpu()
 
     @property
-    def kn_patch(self):
+    def kn_in(self):
         """Returns the current named kn patches on CPU."""
-        return NamedData(name=self._kn_patch_names, data=self._kn_patch.cpu())
+        return NamedData(name=self._kn_in_names, data=self._kn_in.cpu())
 
     @property
     def kn_blur(self):
@@ -346,20 +364,45 @@ class TrainerHRtoLR(Trainer):
 
     @property
     def kn_alias(self):
-        """Returns the current aliased patches on CPU."""
+        """Returns the current blurred patches on CPU."""
         return self._kn_alias.detach().cpu()
 
     @property
-    def lrd_pred_kn(self):
+    def kn_t_in(self):
+        """Returns the current named kn patches on CPU."""
+        return NamedData(name=self._kn_t_in_names, data=self._kn_t_in.cpu())
+
+    @property
+    def kn_t_blur(self):
+        """Returns the current blurred patches on CPU."""
+        return self._kn_t_blur.detach().cpu()
+
+    @property
+    def kn_t_alias(self):
+        """Returns the current aliased patches on CPU."""
+        return self._kn_t_alias.detach().cpu()
+
+    @property
+    def kn_t_alias_t(self):
+        """Returns the current aliased patches on CPU."""
+        return self._kn_t_alias_t.detach().cpu()
+
+    @property
+    def kn_prob(self):
         """Returns the :attr:`lr_disc` output of kn patches."""
-        return self._lrd_pred_kn.detach().cpu()
+        return self._kn_prob.detach().cpu()
 
     @property
-    def lrd_pred_real(self):
+    def kn_t_prob(self):
+        """Returns the :attr:`lr_disc` output of kn patches."""
+        return self._kn_t_prob.detach().cpu()
+
+    @property
+    def lrd_real_prob(self):
         """Returns the :attr:`lr_disc` output of real lrd patches."""
-        return self._lrd_pred_real.detach().cpu()
+        return self._lrd_real_prob.detach().cpu()
 
     @property
-    def lrd_pred_fake(self):
+    def lrd_fake_prob(self):
         """Returns the :attr:`lr_disc` output of fake lrd patches."""
-        return self._lrd_pred_fake.detach().cpu()
+        return self._lrd_fake_prob.detach().cpu()
