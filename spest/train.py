@@ -255,8 +255,9 @@ class TrainerHRtoLR(Trainer):
         self._kn_t_alias_t = self._kn_t_alias.permute(0, 1, 3, 2)
         self._kn_t_prob = self.lr_disc(self._kn_t_alias_t)
 
-        self.kn_gan_loss = (self._gan_loss_func(self._kn_prob, True) \
-            + self._gan_loss_func(self._kn_t_prob, False)) / 2
+        # self.kn_gan_loss = (self._gan_loss_func(self._kn_prob, True) \
+        #     + self._gan_loss_func(self._kn_t_prob, False)) / 2
+        self.kn_gan_loss = self._gan_loss_func(self._kn_prob, True)
         self.kn_tot_loss = self.kn_gan_loss + self._calc_reg()
         self.kn_tot_loss.backward()
         self.kn_optim.step()

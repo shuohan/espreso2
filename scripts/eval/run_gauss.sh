@@ -30,7 +30,7 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../results/simu_lr-${lr}_bs-${bs}_lrdk-${lrdk[0]}-${lrdk[1]}_ne-${ne}_sw-${sw_str}_transpose/${kernel}_${fwhm}_${scale}_${len}
+    outdir=../results/simu_lr-${lr}_bs-${bs}_lrdk-${lrdk[0]}-${lrdk[1]}_ne-${ne}_sw-${sw_str}_transpose_single-side-loss/${kernel}_${fwhm}_${scale}_${len}
     if [ -f $outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
