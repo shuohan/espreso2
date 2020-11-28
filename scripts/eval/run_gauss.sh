@@ -24,8 +24,8 @@ images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORON
 #         /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
 #         /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-2p0_scale-0p125_len-13.nii)
 
-lr=2e-4
-bs=8
+lr=1e-4
+bs=32
 ne=10000
 lrdk=(3 1)
 sw=0
