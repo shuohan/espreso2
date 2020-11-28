@@ -6,52 +6,6 @@ import torch.nn.functional as F
 from .config import Config
 
 
-class Clamp(nn.Module):
-    """Wrapper class of :func:`torch.clamp`.
-
-    """
-    def __init__(self, min, max):
-        super().__init__()
-        self.min = min
-        self.max = max
-
-    def forward(self, x):
-        return torch.clamp(x, self.min, self.max)
-
-    def extra_repr(self):
-        return 'min={}, max={}'.format(self.min, self.max)
-
-
-class Interpolate(nn.Module):
-    """Wrapper class of :func:`torch.nn.functional.interpolate`.
-
-    """
-    def __init__(self, size=None, scale_factor=None, mode='bicubic',
-                 align_corners=None, recompute_scale_factor=None):
-        super().__init__()
-        self.size = size
-        self.scale_factor = scale_factor
-        self.mode = mode
-        self.align_corners = align_corners
-        self.recompute_scale_factor = recompute_scale_factor
-
-    def forward(self, x):
-        return F.interpolate(x, size=self.size, scale_factor=self.scale_factor,
-                             mode=self.mode, align_corners=self.align_corners,
-                             recompute_scale_factor=self.recompute_scale_factor)
-
-    def extra_repr(self):
-        attrs = ['size', 'scale_factor', 'mode', 'align_corners',
-                 'recompute_scale_factor']
-        message = []
-        for attr in attrs:
-            value = getattr(self, attr)
-            if value is not None:
-                message.append('{}={}'.format(attr, value))
-        message = ', '.join(message)
-        return message
-
-
 class KernelNet(nn.Sequential):
     """The network outputs a 1D blur kernel to estimate slice selection.
 
@@ -60,15 +14,18 @@ class KernelNet(nn.Sequential):
         super().__init__()
         config = Config()
 
-        self.input_weight = nn.Parameter(torch.zeros(1, config.kn_num_channels))
-        self.input_clamp = Clamp(-3, 3)
-        for i in range(config.kn_num_linears - 1):
-            linear = nn.Linear(config.kn_num_channels, config.kn_num_channels)
-            self.add_module('linear%d' % i, linear)
-            self.add_module('clamp%d' % i, Clamp(-3, 3))
-        linear = nn.Linear(config.kn_num_channels, config.kernel_length)
-        self.add_module('linear%d' % (config.kn_num_linears - 1), linear)
-        self.softmax = nn.Softmax(dim=1)
+        ks = 3
+        num_ch = config.kn_num_channels
+
+        weight_size = config.kernel_length + (ks - 1) * config.kn_num_convs 
+        shape = (1, config.kn_num_channels, weight_size, 1)
+        self.input_weight = nn.Parameter(torch.zeros(*shape))
+        for i in range(config.kn_num_convs - 1):
+            self.add_module('conv%d' % i, nn.Conv2d(num_ch, num_ch, (ks, 1)))
+            self.add_module('relu%d' % i, nn.ReLU())
+        conv = nn.Conv2d(num_ch, 1, (ks, 1))
+        self.add_module('conv%d' % (config.kn_num_convs - 1), conv)
+        self.softmax = nn.Softmax(dim=2)
         self.reset_parameters()
 
         # Calling self._calc_kernel() at init cannot put tensors into cuda
@@ -77,10 +34,9 @@ class KernelNet(nn.Sequential):
 
     def _calc_kernel(self):
         """Calculates the current kernel with shape ``[1, kernel_length]``."""
-        kernel = self.input_clamp(self.input_weight)
+        kernel = self.input_weight
         for module in self:
             kernel = module(kernel)
-        kernel = kernel.view(1, 1, -1, 1)
         return kernel
 
     def update_kernel(self):

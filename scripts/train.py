@@ -21,7 +21,8 @@ parser.add_argument('-w', '--num-workers', default=0, type=int)
 parser.add_argument('-sw', '--smoothness-loss-weight', default=1.0, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
-parser.add_argument('-lrdk', '--lrd-kernel-size', default=(3, 3),
+parser.add_argument('-wd', '--weight-decay', default=0, type=float)
+parser.add_argument('-lrdk', '--lrd-kernel-size', default=(3, 1),
                     type=int, nargs=2)
 args = parser.parse_args()
 
