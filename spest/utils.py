@@ -45,6 +45,9 @@ def calc_fwhm(kernel):
     kernel = kernel.squeeze()
     half_max = float(np.max(kernel)) / 2
     indices = np.where(kernel > half_max)[0] 
+    if len(indices) == 0:
+        return 0, 0, 0
+
     left = indices[0]
     if left > 0:
         interp = interp1d((kernel[left-1], kernel[left]), (left - 1, left))
