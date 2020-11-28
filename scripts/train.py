@@ -24,6 +24,8 @@ parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
 parser.add_argument('-wd', '--weight-decay', default=0, type=float)
 parser.add_argument('-lrdk', '--lrd-kernels', default=(3, 3, 3, 3, 3),
                     nargs='+', type=int)
+parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
+                    nargs='+', type=int)
 args = parser.parse_args()
 
 
