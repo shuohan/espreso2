@@ -25,11 +25,11 @@ images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORON
 #         /data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-2p0_scale-0p125_len-13.nii)
 
 lr=2e-4
-bs=32
+bs=8
 ne=10000
 lrdk=(3 1)
 sw=0
-wd=1e-4
+wd=1e-3
 sw_str=$(echo $sw | sed "s/\./p/")
 
 for image in ${images[@]}; do
@@ -42,7 +42,7 @@ for image in ${images[@]}; do
         continue
     fi
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-    echo docker run --gpus device=0 --rm \
+    echo docker run --gpus device=1 --rm \
         -v $psf_est_dir:$psf_est_dir \
         -v $sssrlib_dir:$sssrlib_dir \
         -v $proc_dir:$proc_dir \
