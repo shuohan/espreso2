@@ -22,7 +22,7 @@ class KernelNet(nn.Sequential):
         self.input_weight = nn.Parameter(torch.zeros(*shape))
         for i in range(config.kn_num_convs - 1):
             self.add_module('conv%d' % i, nn.Conv2d(num_ch, num_ch, (ks, 1)))
-            self.add_module('tanh%d' % i, nn.Tanh())
+            self.add_module('relu%d' % i, nn.ReLU())
         conv = nn.Conv2d(num_ch, 1, (ks, 1))
         self.add_module('conv%d' % (config.kn_num_convs - 1), conv)
         self.softmax = nn.Softmax(dim=2)
