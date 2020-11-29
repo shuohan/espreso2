@@ -98,12 +98,12 @@ class LowResDiscriminator(nn.Sequential):
         in_ch = 1
         for i, (ks, out_ch) in enumerate(zip(config.lrd_kernels[:-1],
                                              config.lrd_num_channels)):
-            conv = nn.Conv2d(in_ch, out_ch, (ks, 1))
+            conv = nn.Conv2d(in_ch, out_ch, ks)
             conv = nn.utils.spectral_norm(conv)
             self.add_module('conv%d' % i, conv)
             relu = nn.LeakyReLU(config.lrelu_neg_slope)
             self.add_module('relu%d' % i, relu)
             in_ch = out_ch
-        conv = nn.Conv2d(in_ch, 1, (config.lrd_kernels[-1], 1))
+        conv = nn.Conv2d(in_ch, 1, config.lrd_kernels[-1])
         conv = nn.utils.spectral_norm(conv)
         self.add_module('conv%d' % (i + 1), conv)

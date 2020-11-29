@@ -22,8 +22,9 @@ parser.add_argument('-sw', '--smoothness-loss-weight', default=1.0, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
 parser.add_argument('-wd', '--weight-decay', default=0, type=float)
-parser.add_argument('-lrdk', '--lrd-kernels', default=(3, 3, 3, 3, 3),
-                    nargs='+', type=int)
+parser.add_argument('-lrdk', '--lrd-kernels', nargs='+', type=str,
+                    default=((3, 1), (3, 1), (3, 1), (3, 1), (3, 1)),
+                    help='Comma separated: 3,1 3,1 1,1.')
 parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
                     nargs='+', type=int)
 args = parser.parse_args()
@@ -70,6 +71,9 @@ if args.scale_factor is None:
         raise RuntimeError('The resolutions of x and y are different.')
 if args.scale_factor < 1:
     raise RuntimeError('Scale factor should be greater or equal to 1.')
+
+args.lrd_kernels = tuple(tuple(int(n) for n in lk.split(','))
+                         for lk in args.lrd_kernels)
 
 config = Config()
 for key, value in args.__dict__.items():
