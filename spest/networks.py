@@ -96,20 +96,14 @@ class LowResDiscriminator(nn.Sequential):
         config = Config()
 
         in_ch = 1
-        out_ch = config.lrd_num_channels
-        for i in range(config.lrd_num_convs - 1):
-            conv = self._create_conv(in_ch, out_ch)
+        for i, (ks, out_ch) in enumerate(zip(config.lrd_kernels[:-1],
+                                             config.lrd_num_channels)):
+            conv = nn.Conv2d(in_ch, out_ch, ks)
             conv = nn.utils.spectral_norm(conv)
             self.add_module('conv%d' % i, conv)
             relu = nn.LeakyReLU(config.lrelu_neg_slope)
             self.add_module('relu%d' % i, relu)
             in_ch = out_ch
-            out_ch = in_ch * 2
-
-        conv = self._create_conv(in_ch, 1)
+        conv = nn.Conv2d(in_ch, 1, config.lrd_kernels[-1])
         conv = nn.utils.spectral_norm(conv)
-        self.add_module('conv%d' % (config.lrd_num_convs - 1), conv)
-
-    def _create_conv(self, in_ch, out_ch):
-        """Creates a conv layer."""
-        return nn.Conv2d(in_ch, out_ch, Config().lrd_kernel_size, padding=0)
+        self.add_module('conv%d' % (i + 1), conv)
