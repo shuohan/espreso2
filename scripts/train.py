@@ -27,6 +27,7 @@ parser.add_argument('-lrdk', '--lrd-kernels', nargs='+', type=str,
                     help='Comma separated: 3,1 3,1 1,1.')
 parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
                     nargs='+', type=int)
+parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
 args = parser.parse_args()
 
 

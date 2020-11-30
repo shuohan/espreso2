@@ -8,13 +8,13 @@ trainer_dir=~/Code/shuo/deep-networks/pytorch-trainer
 simu_dir=~/Code/shuo/utils/lr-simu
 data_dir=/data
 
-images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-gauss_fwhm-2p0_scale-0p125_len-13.nii)
+images=(/data/phantom/simu/SUPERRES-ADNIPHANTOM_20200711_PHANTOM-T2-TSE-3D-CORONAL-PRE-ACQ1-01mm_resampled_rot-0-45-45_type-rect_fwhm-9p0_scale-0p125_len-13.nii)
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../tests/results_31-31-31_1024/simu_${fwhm}_${scale}_${len}
+    outdir=../tests/results_knc-16/simu_${fwhm}_${scale}_${len}
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
     docker run --gpus device=1 --rm \
         -v $psf_est_dir:$psf_est_dir \
@@ -28,6 +28,8 @@ for image in ${images[@]}; do
         -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir:$simu_dir \
         -w $psf_est_dir/scripts -t \
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
-        ./train.py -i $image -o $outdir -k $kernel -kl 19 -isz 4 -e 5000 \
-        -sw 0 -wd 1e-2 -lrdk 3,1 3,1 3,1 1,1 1,1 -lrdc 1024 1024 1024 1024
+        ./train.py -i $image -o $outdir -k $kernel -kl 19 -isz 4 -e 10000 \
+        -sw 0 -wd 1e-2 -lrdk 3,1 3,1 3,1 1,1 1,1 1,1 1,1 1,1 1,1 1,1 \
+        -lrdc 64 64 64 64 64 64 64 64 64 -knc 3
+        # -lrdc 128 128 128 128 128 128 128 128 128
 done # | rush -j 3 {}
