@@ -14,7 +14,7 @@ for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../tests/results_knc-16/simu_${fwhm}_${scale}_${len}
+    outdir=../tests/results/simu_${fwhm}_${scale}_${len}
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
     docker run --gpus device=1 --rm \
         -v $psf_est_dir:$psf_est_dir \
@@ -30,6 +30,6 @@ for image in ${images[@]}; do
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
         ./train.py -i $image -o $outdir -k $kernel -kl 19 -isz 4 -e 10000 \
         -sw 0 -wd 1e-2 -lrdk 3,1 3,1 3,1 1,1 1,1 1,1 1,1 1,1 1,1 1,1 \
-        -lrdc 64 64 64 64 64 64 64 64 64 -knc 3
+        -lrdc 64 64 64 64 64 64 64 64 64 -knc 6 -ns 2000
         # -lrdc 128 128 128 128 128 128 128 128 128
 done # | rush -j 3 {}
