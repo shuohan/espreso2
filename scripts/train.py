@@ -43,7 +43,7 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 import warnings
 
 from sssrlib.patches import Patches, PatchesOr
-from sssrlib.transform import create_rot_flip
+from sssrlib.transform import Identity, Flip
 from spest.config import Config
 from spest.train import TrainerHRtoLR, KernelSaver, KernelEvaluator
 from spest.networks import KernelNet, LowResDiscriminator
@@ -106,9 +106,10 @@ print(kn_optim)
 print(lrd_optim)
 
 # transforms = [] if args.no_aug else create_rot_flip()
+transforms = [Identity(), Flip((0, )), Flip((2, ))]
 patches = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
                   named=True, weight_stride=config.weight_stride,
-                  avg_grad=False).cuda()
+                  avg_grad=False, transforms=transforms, verbose=False).cuda()
 dataloader = patches.get_dataloader(config.batch_size, args.num_workers)
 print('Patches')
 print('----------')
