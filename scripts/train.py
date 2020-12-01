@@ -29,7 +29,7 @@ parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
                     nargs='+', type=int)
 parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
 parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
-parser.add_argument('-ps', '--patch-size', default=20, type=int)
+parser.add_argument('-ps', '--patch-size', default=7, type=int)
 args = parser.parse_args()
 
 
@@ -94,6 +94,9 @@ lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
+weight_stride = [8, 8, int(max(config.scale_factor // 8, 1))]
+config.add_config('weight_stride', weight_stride)
+# config.add_config('weight_stride', (1, 1, 1))
 print(config)
 config.save_json(config_output)
 
@@ -104,7 +107,8 @@ print(lrd_optim)
 
 # transforms = [] if args.no_aug else create_rot_flip()
 patches = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
-                  named=True).cuda()
+                  named=True, weight_stride=config.weight_stride,
+                  avg_grad=False).cuda()
 dataloader = patches.get_dataloader(config.batch_size, args.num_workers)
 print('Patches')
 print('----------')

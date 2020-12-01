@@ -32,7 +32,7 @@ class Config(Config_):
         self.add_config('kernel_length', 19)
         self.add_config('lrd_num_channels', (64, 128, 256, 512))
         self.add_config('lrelu_neg_slope', 0.1)
-        self.add_config('patch_size', 20)
+        self.add_config('patch_size', 7)
         self.add_config('scale_factor', 1)
         self.add_config('batch_size', 16)
         self.add_config('num_epochs', 30000)
