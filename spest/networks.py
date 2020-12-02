@@ -25,7 +25,7 @@ class KernelNet(nn.Sequential):
             self.add_module('relu%d' % i, nn.ReLU())
         conv = nn.Conv2d(num_ch, 1, (ks, 1))
         self.add_module('conv%d' % (config.kn_num_convs - 1), conv)
-        self.softmax = nn.Softmax(dim=2)
+        # self.softmax = nn.Softmax(dim=2)
         self.reset_parameters()
 
         # Calling self._calc_kernel() at init cannot put tensors into cuda
@@ -37,6 +37,8 @@ class KernelNet(nn.Sequential):
         kernel = self.input_weight
         for module in self:
             kernel = module(kernel)
+        kernel = 0.5 * (kernel + torch.flip(kernel, (2, )))
+        kernel = F.softmax(kernel, dim=2)
         return kernel
 
     def update_kernel(self):
