@@ -97,7 +97,8 @@ lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
-weight_stride = [8, 8, int(max(config.scale_factor // 8, 1))]
+# weight_stride = [8, 8, int(max(config.scale_factor // 8, 1))]
+weight_stride = (2, 2, 1)
 config.add_config('weight_stride', weight_stride)
 # config.add_config('weight_stride', (1, 1, 1))
 print(config)
@@ -110,10 +111,16 @@ print(lrd_optim)
 
 # transforms = [] if args.no_aug else create_rot_flip()
 transforms = [Identity(), Flip((0, )), Flip((2, ))]
+
+sample_weight_output = args.output.joinpath('sample_weights')
+sample_weight_output.mkdir(exist_ok=True)
 patches = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
                   named=True, weight_stride=config.weight_stride,
-                  avg_grad=False, transforms=transforms, verbose=False).cuda()
-dataloader = patches.get_dataloader(config.batch_size, args.num_workers)
+                  voxel_size=zooms, sigma=2, avg_grad=False,
+                  transforms=transforms, verbose=False,
+                  weight_dir=sample_weight_output).cuda()
+dataloader = patches.get_dataloader(config.batch_size,
+                                    num_workers=args.num_workers)
 print('Patches')
 print('----------')
 print(patches)
