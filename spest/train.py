@@ -69,7 +69,7 @@ class KernelSaver(ThreadedSaver):
         return ImageThread(save_kernel, self.queue)
 
     def _check_subject_type(self, subject):
-        assert isinstance(subject, TrainerHRtoLR)
+        assert isinstance(subject, Trainer)
 
     def update_on_epoch_end(self):
         if self.subject.epoch_ind % self.step == 0:
@@ -413,3 +413,109 @@ class TrainerHRtoLR(Trainer):
     def lrd_fake_prob(self):
         """Returns the :attr:`lr_disc` output of fake lrd patches."""
         return self._lrd_fake_prob.detach().cpu()
+
+
+class InitKernelType(str, Enum):
+    """The type of kernel to initialize to.
+
+    Attributes:
+        IMPULSE (str): Initialize to an impulse function.
+        GAUSSIAN (str): Initialize to a Gaussian function.
+        RECT (str): Initialize to a rect function.
+        NONE (str): Do not initialize the kernel, i.e. the kernel is random.
+
+    """
+    IMPULSE = 'impulse'
+    GAUSSIAN = 'guassian'
+    RECT = 'rect'
+    NONE = 'none'
+
+
+def create_init_kernel(init_kernel_type, kernel_length, scale_factor=None):
+    """Creates the kernel to initialize.
+
+    Args:
+        init_kernel_type (str or InitKernelType): The type of the
+            initialization.
+        scale_factor (float): The scale factor  (greater than 1).
+        shape (iterable[int]): The shape of the kernel.
+
+    """
+    init_kernel_type = InitKernelType(init_kernel_type)
+    if init_kernel_type is InitKernelType.IMPULSE:
+        kernel = torch.zeros([1, 1, kernel_length, 1], dtype=torch.float32)
+        kernel[:, :, kernel_length//2, ...] = 1
+    else:
+        raise NotImplementedError
+    return kernel
+
+
+class TrainerKernelInit(Trainer):
+    """Initializes the kernel using simulated HR and LR pairs.
+
+    """
+    def __init__(self, kernel_net, init_optim, dataloader, init_type='impulse'):
+        super().__init__(Config().num_init_epochs)
+        self.kernel_net = kernel_net
+        self.init_optim = init_optim
+        self.dataloader = dataloader
+        self.init_type = init_type
+
+        self.init_loss = np.nan
+        self._loss_func = torch.nn.MSELoss()
+        self._batch_ind = -1
+        self._ref_kernel = self._create_init_kernel()
+
+    def _create_init_kernel(self):
+        """Creates the kernel to initialize to."""
+        kernel = create_init_kernel(self.init_type, Config().kernel_length)
+        return kernel.cuda()
+
+    def train(self):
+        self.notify_observers_on_train_start()
+        for self._epoch_ind in range(self.num_epochs):
+            self.notify_observers_on_epoch_start()
+            self.notify_observers_on_batch_start()
+            self._train()
+            self.notify_observers_on_batch_end()
+            self.notify_observers_on_epoch_end()
+        self.notify_observers_on_train_end()
+
+    def _train(self):
+        self.init_optim.zero_grad()
+        for batch in self.dataloader:
+            self._patch_names = batch.name
+            self._patch = batch.data
+        self._blur = self.kernel_net(self._patch)
+        self._ref_blur = F.conv2d(self._patch, self._ref_kernel)
+        self.init_loss = self._loss_func(self._blur, self._ref_blur)
+        self.init_loss.backward()
+        self.init_optim.step()
+        self.kernel_net.update_kernel()
+
+    @property
+    def ref_blur(self):
+        """Returns the blurred patches with a reference kernel on CPU."""
+        return self._ref_blur.detach().cpu()
+
+    @property
+    def blur(self):
+        """Returns the blurred patches with a reference kernel on CPU."""
+        return self._blur.detach().cpu()
+
+    @property
+    def num_batches(self):
+        return len(self.dataloader)
+
+    @property
+    def batch_size(self):
+        return self.dataloader.batch_size
+
+    @property
+    def batch_ind(self):
+        return self._batch_ind + 1
+
+    @property
+    def patch(self):
+        """Returns the current named kn patches on CPU."""
+        return NamedData(name=self._patch_names, data=self._patch.cpu())
