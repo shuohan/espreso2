@@ -116,7 +116,7 @@ sample_weight_output = args.output.joinpath('sample_weights')
 sample_weight_output.mkdir(exist_ok=True)
 patches = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
                   named=True, weight_stride=config.weight_stride,
-                  voxel_size=zooms, sigma=2, avg_grad=False,
+                  voxel_size=zooms, sigma=1, avg_grad=False,
                   transforms=transforms, verbose=False,
                   weight_dir=sample_weight_output).cuda()
 dataloader = patches.get_dataloader(config.batch_size,
