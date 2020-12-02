@@ -21,9 +21,17 @@ parser.add_argument('-w', '--num-workers', default=0, type=int)
 parser.add_argument('-sw', '--smoothness-loss-weight', default=1.0, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
-parser.add_argument('-lrdk', '--lrd-kernel-size', default=(3, 1),
-                    type=int, nargs=2)
+parser.add_argument('-wd', '--weight-decay', default=0, type=float)
+parser.add_argument('-lrdk', '--lrd-kernels', nargs='+', type=str,
+                    default=((3, 1), (3, 1), (3, 1), (3, 1), (3, 1)),
+                    help='Comma separated: 3,1 3,1 1,1.')
+parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
+                    nargs='+', type=int)
+parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
 parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
+parser.add_argument('-ps', '--patch-size', default=7, type=int)
+parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
+                    help='The number of init epochs (iterations).')
 args = parser.parse_args()
 
 
@@ -37,9 +45,10 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 import warnings
 
 from sssrlib.patches import Patches, PatchesOr
-from sssrlib.transform import create_rot_flip
+from sssrlib.transform import Identity, Flip
 from spest.config import Config
 from spest.train import TrainerHRtoLR, KernelSaver, KernelEvaluator
+from spest.train import TrainerKernelInit
 from spest.networks import KernelNet, LowResDiscriminator
 from spest.utils import calc_patch_size
 
@@ -69,6 +78,9 @@ if args.scale_factor is None:
 if args.scale_factor < 1:
     raise RuntimeError('Scale factor should be greater or equal to 1.')
 
+args.lrd_kernels = tuple(tuple(int(n) for n in lk.split(','))
+                         for lk in args.lrd_kernels)
+
 config = Config()
 for key, value in args.__dict__.items():
     if hasattr(config, key):
@@ -85,6 +97,9 @@ lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
+weight_stride = [8, 8, int(max(config.scale_factor // 8, 1))]
+config.add_config('weight_stride', weight_stride)
+# config.add_config('weight_stride', (1, 1, 1))
 print(config)
 config.save_json(config_output)
 
@@ -94,8 +109,10 @@ print(kn_optim)
 print(lrd_optim)
 
 # transforms = [] if args.no_aug else create_rot_flip()
+transforms = [Identity(), Flip((0, )), Flip((2, ))]
 patches = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
-                  named=True).cuda()
+                  named=True, weight_stride=config.weight_stride,
+                  avg_grad=False, transforms=transforms, verbose=False).cuda()
 dataloader = patches.get_dataloader(config.batch_size, args.num_workers)
 print('Patches')
 print('----------')
@@ -103,7 +120,7 @@ print(patches)
 
 trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, dataloader)
 queue = DataQueue(['kn_gan_loss', 'smoothness_loss', 'center_loss',
-                   'boundary_loss', 'kn_tot_loss', 'lrd_tot_loss'])
+                   'boundary_loss', 'kn_tot_loss', 'lrd_gan_loss'])
 printer = EpochPrinter(print_sep=False, decimals=2)
 logger = EpochLogger(log_output)
 
@@ -123,15 +140,16 @@ if args.true_kernel is not None:
     evaluator.register(eval_queue)
     trainer.register(evaluator)
 
-attrs = ['lrd_real', 'lrd_real_blur', 'lrd_real_alias',
+attrs = ['lrd_real', 'lrd_real_blur', 'lrd_real_alias', 'lrd_real_alias_t',
          'lrd_fake', 'lrd_fake_blur', 'lrd_fake_alias',
-         'kn_patch', 'kn_blur', 'kn_alias']
+         'kn_in', 'kn_blur', 'kn_alias',
+         'kn_t_in', 'kn_t_blur', 'kn_t_alias', 'kn_t_alias_t']
 im_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
                       file_struct='epoch/sample', save_type='png_norm',
                       save_init=False, prefix='patch',
                       zoom=config.image_save_zoom, ordered=True)
 
-attrs = ['lrd_pred_real', 'lrd_pred_fake', 'lrd_pred_kn']
+attrs = ['lrd_real_prob', 'lrd_fake_prob', 'kn_prob', 'kn_t_prob']
 pred_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
                         file_struct='epoch/sample', save_type='png',
                         image_type='sigmoid', save_init=False, prefix='lrd',
@@ -146,5 +164,37 @@ trainer.register(queue)
 trainer.register(im_saver)
 trainer.register(pred_saver)
 trainer.register(kernel_saver)
+
+if config.num_init_epochs > 0:
+    init_optim = Adam(kn.parameters(), lr=config.learning_rate,
+                      betas=(0.5, 0.999))
+    init_trainer = TrainerKernelInit(kn, kn_optim, dataloader)
+    print(init_optim)
+
+    init_im_output = args.output.joinpath('init_patches')
+    init_kernel_output = args.output.joinpath('init_kernel')
+    init_log_output = args.output.joinpath('init_loss.csv')
+
+    init_queue = DataQueue(['init_loss'])
+    init_printer = EpochPrinter(print_sep=False, decimals=2)
+    init_logger = EpochLogger(init_log_output)
+    init_queue.register(init_printer)
+    init_queue.register(init_logger)
+
+    init_kernel_saver = KernelSaver(init_kernel_output,
+                                    step=config.image_save_step,
+                                    save_init=True, truth=true_kernel)
+    init_im_saver = ImageSaver(init_im_output,
+                               attrs=['patch', 'blur', 'ref_blur'],
+                               step=config.image_save_step,
+                               file_struct='epoch/sample', save_type='png_norm',
+                               save_init=False, prefix='patch',
+                               zoom=config.image_save_zoom, ordered=True)
+
+    init_trainer.register(init_queue)
+    init_trainer.register(init_im_saver)
+    init_trainer.register(init_kernel_saver)
+
+    init_trainer.train()
 
 trainer.train()
