@@ -30,6 +30,8 @@ parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
 parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
 parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
 parser.add_argument('-ps', '--patch-size', default=7, type=int)
+parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
+                    help='The number of init epochs (iterations).')
 args = parser.parse_args()
 
 
@@ -46,6 +48,7 @@ from sssrlib.patches import Patches, PatchesOr
 from sssrlib.transform import Identity, Flip
 from spest.config import Config
 from spest.train import TrainerHRtoLR, KernelSaver, KernelEvaluator
+from spest.train import TrainerKernelInit
 from spest.networks import KernelNet, LowResDiscriminator
 from spest.utils import calc_patch_size
 
@@ -161,5 +164,37 @@ trainer.register(queue)
 trainer.register(im_saver)
 trainer.register(pred_saver)
 trainer.register(kernel_saver)
+
+if config.num_init_epochs > 0:
+    init_optim = Adam(kn.parameters(), lr=config.learning_rate,
+                      betas=(0.5, 0.999))
+    init_trainer = TrainerKernelInit(kn, kn_optim, dataloader)
+    print(init_optim)
+
+    init_im_output = args.output.joinpath('init_patches')
+    init_kernel_output = args.output.joinpath('init_kernel')
+    init_log_output = args.output.joinpath('init_loss.csv')
+
+    init_queue = DataQueue(['init_loss'])
+    init_printer = EpochPrinter(print_sep=False, decimals=2)
+    init_logger = EpochLogger(init_log_output)
+    init_queue.register(init_printer)
+    init_queue.register(init_logger)
+
+    init_kernel_saver = KernelSaver(init_kernel_output,
+                                    step=config.image_save_step,
+                                    save_init=True, truth=true_kernel)
+    init_im_saver = ImageSaver(init_im_output,
+                               attrs=['patch', 'blur', 'ref_blur'],
+                               step=config.image_save_step,
+                               file_struct='epoch/sample', save_type='png_norm',
+                               save_init=False, prefix='patch',
+                               zoom=config.image_save_zoom, ordered=True)
+
+    init_trainer.register(init_queue)
+    init_trainer.register(init_im_saver)
+    init_trainer.register(init_kernel_saver)
+
+    init_trainer.train()
 
 trainer.train()
