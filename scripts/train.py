@@ -75,7 +75,7 @@ image = obj.get_fdata(dtype=np.float32)
 if args.scale_factor is None:
     zooms = obj.header.get_zooms()
     args.scale_factor = float(zooms[args.z_axis] / zooms[xy[0]])
-    if zooms[xy[0]] != zooms[xy[1]] and not args.no_aug:
+    if not np.isclose(zooms[xy[0]], zooms[xy[1]]):
         raise RuntimeError('The resolutions of x and y are different.')
 if args.scale_factor < 1:
     raise RuntimeError('Scale factor should be greater or equal to 1.')
@@ -99,10 +99,8 @@ lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
-# weight_stride = [8, 8, int(max(config.scale_factor // 8, 1))]
 weight_stride = (2, 2, 1)
 config.add_config('weight_stride', weight_stride)
-# config.add_config('weight_stride', (1, 1, 1))
 print(config)
 config.save_json(config_output)
 
