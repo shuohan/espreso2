@@ -48,3 +48,4 @@ class Config(Config_):
         self.add_config('learning_rate', 1e-4)
         self.add_config('num_epochs_per_stage', 4000)
         self.add_config('symm_kernel', False)
+        self.add_config('zero_pad_kn', False)
