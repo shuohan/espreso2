@@ -117,16 +117,19 @@ sample_weight_xz_output.mkdir(exist_ok=True)
 sample_weight_yz_output = args.output.joinpath('sample_weights_yz')
 sample_weight_yz_output.mkdir(exist_ok=True)
 
-patches_xz = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
-                     named=True, weight_stride=config.weight_stride,
-                     voxel_size=zooms, sigma=1, avg_grad=False,
-                     transforms=transforms, verbose=False,
-                     weight_dir=sample_weight_xz_output).cuda()
-patches_yz = Patches(image, config.patch_size, x=xy[1], y=xy[0], z=args.z_axis,
-                     named=True, weight_stride=config.weight_stride,
-                     voxel_size=zooms, sigma=1, avg_grad=False,
-                     transforms=transforms, verbose=False,
-                     weight_dir=sample_weight_yz_output).cuda()
+voxel_size = [zooms[xy[0]], zooms[xy[1]], zooms[args.z_axis]]
+patch_size_xz = config.patch_size
+patch_size_yz = np.array(config.patch_size)[[1, 0, 2]].tolist()
+patches_xz = Patches(patch_size_xz, image=image, x=xy[0], y=xy[1],
+                     z=args.z_axis, transforms=transforms, sigma=1,
+                     voxel_size=voxel_size, weight_stride=config.weight_stride,
+                     weight_dir=sample_weight_xz_output, avg_grad=False,
+                     compress=True, named=True, verbose=False).cuda()
+patches_yz = Patches(patch_size_yz, patches=patches_xz,
+                     transforms=transforms, sigma=1,
+                     voxel_size=voxel_size, weight_stride=config.weight_stride,
+                     weight_dir=sample_weight_yz_output, avg_grad=False,
+                     compress=True, named=True, verbose=False).cuda()
 patches = PatchesOr(patches_xz, patches_yz)
 dataloader = patches.get_dataloader(config.batch_size,
                                     num_workers=args.num_workers)
