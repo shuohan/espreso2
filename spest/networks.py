@@ -37,7 +37,8 @@ class KernelNet(nn.Sequential):
         kernel = self.input_weight
         for module in self:
             kernel = module(kernel)
-        kernel = 0.5 * (kernel + torch.flip(kernel, (2, )))
+        if Config().symm_kernel:
+            kernel = 0.5 * (kernel + torch.flip(kernel, (2, )))
         kernel = F.softmax(kernel, dim=2)
         return kernel
 
