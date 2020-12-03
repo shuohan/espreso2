@@ -45,6 +45,7 @@ from pathlib import Path
 from torch.optim import Adam
 from torch.utils.data import DataLoader, WeightedRandomSampler
 import warnings
+from pytorchviz import make_dot
 
 from sssrlib.patches import Patches, PatchesOr
 from sssrlib.transform import Identity, Flip
@@ -67,6 +68,7 @@ kernel_output = args.output.joinpath('kernel')
 log_output = args.output.joinpath('loss.csv')
 eval_log_output = args.output.joinpath('eval.csv')
 config_output = args.output.joinpath('config.json')
+arch_output = args.output.joinpath('arch')
 
 xy = [0, 1, 2]
 xy.remove(args.z_axis)
@@ -90,11 +92,22 @@ for key, value in args.__dict__.items():
 config.add_config('input_image', os.path.abspath(str(args.input)))
 config.add_config('output_dirname', os.path.abspath(str(args.output)))
 
-kn = KernelNet().cuda() if config.zero_pad_kn else KernelNetZP().cuda()
+kn = KernelNet().cuda() if not config.zero_pad_kn else KernelNetZP().cuda()
 lrd = LowResDiscriminator().cuda()
 kn_optim = Adam(kn.parameters(), lr=config.learning_rate, betas=(0.5, 0.999),
                 weight_decay=config.weight_decay)
 lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
+
+x = torch.rand((1, 1, 64, 64)).float().cuda()
+kn_dot = make_dot(x, kn)
+kn_dot.render(arch_output.joinpath('kn'))
+lrd_dot = make_dot(x, lrd)
+lrd_dot.render(arch_output.joinpath('lrd'))
+
+with open(arch_output.joinpath('lrd.txt'), 'w') as f:
+    f.write(lrd.__str__())
+with open(arch_output.joinpath('kn.txt'), 'w') as f:
+    f.write(kn.__str__())
 
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
