@@ -112,7 +112,7 @@ print(kn_optim)
 print(lrd_optim)
 
 # transforms = [] if args.no_aug else create_rot_flip()
-transforms = [Identity(), Flip((0, )), Flip((2, ))]
+transforms = [Identity(), Flip((0, )), Flip((2, )), Flip((0, 2))]
 
 sample_weight_xz_output = args.output.joinpath('sample_weights_xz')
 sample_weight_xz_output.mkdir(exist_ok=True)
