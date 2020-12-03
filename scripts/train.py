@@ -113,13 +113,22 @@ print(lrd_optim)
 # transforms = [] if args.no_aug else create_rot_flip()
 transforms = [Identity(), Flip((0, )), Flip((2, ))]
 
-sample_weight_output = args.output.joinpath('sample_weights')
-sample_weight_output.mkdir(exist_ok=True)
-patches = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
-                  named=True, weight_stride=config.weight_stride,
-                  voxel_size=zooms, sigma=1, avg_grad=False,
-                  transforms=transforms, verbose=False,
-                  weight_dir=sample_weight_output).cuda()
+sample_weight_xz_output = args.output.joinpath('sample_weights_xz')
+sample_weight_xz_output.mkdir(exist_ok=True)
+sample_weight_yz_output = args.output.joinpath('sample_weights_yz')
+sample_weight_yz_output.mkdir(exist_ok=True)
+
+patches_xz = Patches(image, config.patch_size, x=xy[0], y=xy[1], z=args.z_axis,
+                     named=True, weight_stride=config.weight_stride,
+                     voxel_size=zooms, sigma=1, avg_grad=False,
+                     transforms=transforms, verbose=False,
+                     weight_dir=sample_weight_xz_output).cuda()
+patches_yz = Patches(image, config.patch_size, x=xy[1], y=xy[0], z=args.z_axis,
+                     named=True, weight_stride=config.weight_stride,
+                     voxel_size=zooms, sigma=1, avg_grad=False,
+                     transforms=transforms, verbose=False,
+                     weight_dir=sample_weight_yz_output).cuda()
+patches = PatchesOr(patches_xz, patches_yz)
 dataloader = patches.get_dataloader(config.batch_size,
                                     num_workers=args.num_workers)
 print('Patches')
