@@ -58,14 +58,14 @@ from pytorch_trainer.log import DataQueue, EpochPrinter, EpochLogger
 from pytorch_trainer.save import ImageSaver
 
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings('ignore')
 
 args.output = Path(args.output)
 args.output.mkdir(parents=True, exist_ok=True)
 im_output = args.output.joinpath('patches')
 kernel_output = args.output.joinpath('kernel')
 log_output = args.output.joinpath('loss.csv')
-eval_log_output = args.output.joinpath('evseg_segal_loss.csv')
+eval_log_output = args.output.joinpath('eval.csv')
 config_output = args.output.joinpath('config.json')
 
 xy = [0, 1, 2]
