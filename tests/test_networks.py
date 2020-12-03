@@ -7,7 +7,7 @@ from pytorchviz import make_dot
 from PIL import Image
 import matplotlib.pyplot as plt
 
-from spest.networks import KernelNet, LowResDiscriminator
+from spest.networks import KernelNet, LowResDiscriminator, KernelNetZP
 from spest.config import Config
 
 
@@ -32,9 +32,22 @@ def test_networks():
 
     lrd = LowResDiscriminator().cuda()
     print(lrd)
-    assert lrd(image_cuda).shape == (1, 1, 502, 512)
+    assert lrd(image_cuda).shape == (1, 1, 502, 502)
     lrd_dot = make_dot(image_cuda, lrd)
     lrd_dot.render(dirname.joinpath('lrd'))
+
+    kn = KernelNetZP().cuda()
+    print(kn)
+    assert kn.kernel_cuda.shape == (1, 1, 19, 1)
+    assert kn(image_cuda).shape == (1, 1, 494, 512)
+    assert torch.isclose(torch.sum(kn.kernel_cuda), torch.tensor(1).float())
+    kn_dot = make_dot(image_cuda, kn)
+    kn_dot.render(dirname.joinpath('knzp'))
+
+    fig = plt.figure()
+    kernel = kn.kernel.numpy().squeeze()
+    plt.plot(kernel)
+    fig.savefig(dirname.joinpath('kernel_zp.png'))
 
 
 if __name__ == '__main__':

@@ -33,6 +33,7 @@ parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
 parser.add_argument('-ps', '--patch-size', default=7, type=int)
 parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
                     help='The number of init epochs (iterations).')
+parser.add_argument('-zp', '--zero-pad-kn', action='store_true')
 args = parser.parse_args()
 
 
@@ -50,7 +51,7 @@ from sssrlib.transform import Identity, Flip
 from spest.config import Config
 from spest.train import TrainerHRtoLR, KernelSaver, KernelEvaluator
 from spest.train import TrainerKernelInit
-from spest.networks import KernelNet, LowResDiscriminator
+from spest.networks import KernelNet, LowResDiscriminator, KernelNetZP
 from spest.utils import calc_patch_size
 
 from pytorch_trainer.log import DataQueue, EpochPrinter, EpochLogger
@@ -89,7 +90,7 @@ for key, value in args.__dict__.items():
 config.add_config('input_image', os.path.abspath(str(args.input)))
 config.add_config('output_dirname', os.path.abspath(str(args.output)))
 
-kn = KernelNet().cuda()
+kn = KernelNet().cuda() if config.zero_pad_kn else KernelNetZP().cuda()
 lrd = LowResDiscriminator().cuda()
 kn_optim = Adam(kn.parameters(), lr=config.learning_rate, betas=(0.5, 0.999),
                 weight_decay=config.weight_decay)

@@ -6,8 +6,8 @@ import torch.nn.functional as F
 from .config import Config
 
 
-class KernelNet(nn.Sequential):
-    """The network outputs a 1D blur kernel to estimate slice selection.
+class _KernelNet(nn.Sequential):
+    """Abstract class for kernel net.
 
     """
     def __init__(self):
@@ -16,31 +16,39 @@ class KernelNet(nn.Sequential):
 
         ks = 3
         num_ch = config.kn_num_channels
+        num_convs = config.kn_num_convs
 
-        weight_size = config.kernel_length + (ks - 1) * config.kn_num_convs 
-        shape = (1, config.kn_num_channels, weight_size, 1)
-        self.input_weight = nn.Parameter(torch.zeros(*shape))
-        for i in range(config.kn_num_convs - 1):
-            self.add_module('conv%d' % i, nn.Conv2d(num_ch, num_ch, (ks, 1)))
-            self.add_module('relu%d' % i, nn.ReLU())
-        conv = nn.Conv2d(num_ch, 1, (ks, 1))
-        self.add_module('conv%d' % (config.kn_num_convs - 1), conv)
-        # self.softmax = nn.Softmax(dim=2)
+        size = self._calc_input_weight_size(ks)
+        self.input_weight = nn.Parameter(torch.zeros(1, num_ch, size, 1))
         self.reset_parameters()
+
+        for i in range(num_convs - 1):
+            self.add_module('conv%d' % i, self._create_conv(num_ch, ks))
+            self.add_module('relu%d' % i, nn.ReLU())
+        self.add_module('conv%d' % (num_convs - 1), self._create_conv(1, ks))
 
         # Calling self._calc_kernel() at init cannot put tensors into cuda
         self._kernel_cuda = None
         self.register_buffer('avg_kernel', self._calc_kernel().detach())
 
+    def _calc_input_weight_size(self, ks):
+        raise NotImplementedError
+
+    def _create_conv(self, out_channels, kernel_size):
+        raise NotImplementedError
+
     def _calc_kernel(self):
-        """Calculates the current kernel with shape ``[1, kernel_length]``."""
+        """Calculates the current kernel with shape ``[1, 1, length]``."""
         kernel = self.input_weight
         for module in self:
             kernel = module(kernel)
         if Config().symm_kernel:
-            kernel = 0.5 * (kernel + torch.flip(kernel, (2, )))
+            kernel = self._make_symmetric_kernel(kernel)
         kernel = F.softmax(kernel, dim=2)
         return kernel
+
+    def _make_symmetric_kernel(self, kernel):
+        return 0.5 * (kernel + torch.flip(kernel, (2, )))
 
     def update_kernel(self):
         r"""Updates the current kernel and calculates the moving average.
@@ -88,6 +96,32 @@ class KernelNet(nn.Sequential):
 
     def forward(self, x):
         return F.conv2d(x, self.kernel_cuda)
+
+
+class KernelNet(_KernelNet):
+    """The network outputs a 1D blur kernel to estimate slice selection.
+
+    """
+    def _calc_input_weight_size(self, ks):
+        return Config().kernel_length + (ks - 1) * Config().kn_num_convs 
+
+    def _create_conv(self, out_channels, kernel_size):
+        in_channels = Config().kn_num_channels
+        return nn.Conv2d(in_channels, out_channels, (kernel_size, 1))
+
+
+class KernelNetZP(_KernelNet):
+    """Zero-padded kernel net.
+
+    """
+    def _calc_input_weight_size(self, ks):
+        return Config().kernel_length
+
+    def _create_conv(self, out_channels, kernel_size):
+        in_channels = Config().kn_num_channels
+        padding = (kernel_size // 2, 0)
+        return nn.Conv2d(in_channels, out_channels, (kernel_size, 1),
+                         padding=padding)
 
 
 class LowResDiscriminator(nn.Sequential):
