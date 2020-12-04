@@ -8,21 +8,16 @@ trainer_dir=~/Code/shuo/deep-networks/pytorch-trainer
 simu_dir=~/Code/shuo/utils/lr-simu
 data_dir=/data
 
-images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
+images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p5_len-13.nii)
-
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
 
 ns=1
 sw=0
 ie=200
-wd=5e-2
+wd=0
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")

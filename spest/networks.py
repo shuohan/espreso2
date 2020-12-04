@@ -24,7 +24,7 @@ class _KernelNet(nn.Sequential):
 
         for i in range(num_convs - 1):
             self.add_module('conv%d' % i, self._create_conv(num_ch, ks))
-            self.add_module('relu%d' % i, nn.ReLU())
+            # self.add_module('relu%d' % i, nn.ReLU())
         self.add_module('conv%d' % (num_convs - 1), self._create_conv(1, ks))
 
         # Calling self._calc_kernel() at init cannot put tensors into cuda
