@@ -275,12 +275,15 @@ class TrainerHRtoLR(Trainer):
     def _calc_reg(self):
         """Calculates kernel regularization."""
         kernel = self.kernel_net.kernel_cuda
-        self.smoothness_loss = self._smoothness_loss_func(kernel)
         self.center_loss = self._center_loss_func(kernel)
         self.boundary_loss = self._boundary_loss_func(kernel)
-        loss = Config().smoothness_loss_weight * self.smoothness_loss \
-             + Config().center_loss_weight * self.center_loss \
+        loss = Config().center_loss_weight * self.center_loss \
              + Config().boundary_loss_weight * self.boundary_loss
+
+        if self.epoch_ind <= Config().smoothness_loss_epochs:
+            self.smoothness_loss = self._smoothness_loss_func(kernel)
+            loss += Config().smoothness_loss_weight * self.smoothness_loss
+            
         return loss
 
     def _train_lr_disc(self):

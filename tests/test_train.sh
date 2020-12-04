@@ -15,7 +15,7 @@ images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gaus
         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
 
 ns=1
-sw=0
+sw=1e-1
 ie=200
 wd=0
 
@@ -23,9 +23,9 @@ for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../tests/results_try-neg/oasis3_${fwhm}_${scale}_${len}_ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}
+    outdir=../tests/results_try-neg_sm-init/oasis3_${fwhm}_${scale}_${len}_ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-    docker run --gpus device=1 --rm \
+    docker run --gpus device=0 --rm \
         -v $psf_est_dir:$psf_est_dir \
         -v $sssrlib_dir:$sssrlib_dir \
         -v $proc_dir:$proc_dir \
