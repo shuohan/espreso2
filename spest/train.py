@@ -211,9 +211,6 @@ class TrainerHRtoLR(Trainer):
 
         self._batch_ind = -1
 
-        self._stage_kernel = torch.zeros_like(self.kernel_net.kernel_cuda)
-        self._stage_kernel[:, :, Config().kernel_length//2, :] = 1
-
     def get_model_state_dict(self):
         return {'kernel_net': self.kernel_net.state_dict(),
                 'lr_disc': self.lr_disc.state_dict()}
@@ -232,9 +229,6 @@ class TrainerHRtoLR(Trainer):
             self._train_lr_disc()
             if self.epoch_ind % Config().kn_update_step == 0:
                 self._train_kernel_net()
-            if self.epoch_ind % Config().num_epochs_per_stage == 0:
-                print('Update stage kernel')
-                self._stage_kernel = self.kernel_net.avg_kernel.detach()
 
             self.notify_observers_on_batch_end()
             self.notify_observers_on_epoch_end()
@@ -261,9 +255,9 @@ class TrainerHRtoLR(Trainer):
         self._kn_t_alias_t = self._kn_t_alias.permute(0, 1, 3, 2)
         self._kn_t_prob = self.lr_disc(self._kn_t_alias_t)
 
-        # self.kn_gan_loss = (self._gan_loss_func(self._kn_prob, True) \
-        #     + self._gan_loss_func(self._kn_t_prob, False)) / 2
-        self.kn_gan_loss = self._gan_loss_func(self._kn_prob, True)
+        self.kn_gan_loss = (self._gan_loss_func(self._kn_prob, True) \
+            + self._gan_loss_func(self._kn_t_prob, False)) / 2
+        # self.kn_gan_loss = self._gan_loss_func(self._kn_prob, True)
         self.kn_tot_loss = self.kn_gan_loss + self._calc_reg()
         self.kn_tot_loss.backward()
         self.kn_optim.step()
@@ -301,7 +295,8 @@ class TrainerHRtoLR(Trainer):
         with torch.no_grad():
             self._lrd_fake_blur = self.kernel_net(self._lrd_fake)
             self._lrd_fake_alias = self._create_aliasing(self._lrd_fake_blur)
-            self._lrd_real_blur = F.conv2d(self._lrd_real, self._stage_kernel)
+            self._lrd_real_blur = self.kernel_net(self._lrd_real)
+            # self._lrd_real_blur = F.conv2d(self._lrd_real, self._stage_kernel)
             self._lrd_real_alias = self._create_aliasing(self._lrd_real_blur)
             self._lrd_real_alias_t = self._lrd_real_alias.permute(0, 1, 3, 2)
         self._lrd_fake_prob = self.lr_disc(self._lrd_fake_alias.detach())
