@@ -263,6 +263,7 @@ class TrainerHRtoLR(Trainer):
         # self.kn_gan_loss = self._gan_loss_func(self._kn_prob, True)
         self.kn_tot_loss = self.kn_gan_loss + self._calc_reg()
         self.kn_tot_loss.backward()
+        torch.nn.utils.clip_grad_value_(self.kernel_net.parameters(), 1)
         self.kn_optim.step()
 
         self.kernel_net.update_kernel()
@@ -494,6 +495,7 @@ class TrainerKernelInit(Trainer):
         self._ref_blur = F.conv2d(self._patch, self._ref_kernel)
         self.init_loss = self._loss_func(self._blur, self._ref_blur)
         self.init_loss.backward()
+        torch.nn.utils.clip_grad_value_(self.kernel_net.parameters(), 1)
         self.init_optim.step()
         self.kernel_net.update_kernel()
 
