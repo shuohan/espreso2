@@ -8,15 +8,15 @@ trainer_dir=~/Code/shuo/deep-networks/pytorch-trainer
 simu_dir=~/Code/shuo/utils/lr-simu
 data_dir=/data
 
-# images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p5_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
+images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
 # images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p5_len-13.nii
 #         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p5_len-13.nii
 #         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p5_len-13.nii
@@ -26,9 +26,15 @@ data_dir=/data
 #         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p125_len-13.nii
 #         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p125_len-13.nii
 #         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p125_len-13.nii)
-images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
-        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
+# images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
+#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
+#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
+images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gauss_fwhm-4p0_scale-0p125_len-13.nii)
 
 lr=2e-4
 bs=32
@@ -52,8 +58,9 @@ for image in ${images[@]}; do
     if [ -f ../$outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
+
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-    docker run --gpus device=1 --rm \
+    echo docker run --gpus device=1 --rm \
         -v $psf_est_dir:$psf_est_dir \
         -v $sssrlib_dir:$sssrlib_dir \
         -v $proc_dir:$proc_dir \
@@ -68,4 +75,4 @@ for image in ${images[@]}; do
         ./train.py -i $image -o $outdir -k $kernel -kl 21 -sw ${sw} \
         -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[@]} \
         -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 0 -ie ${ie}
-done # | rush -j 3 {}
+done | rush -j 2 {}
