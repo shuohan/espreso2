@@ -32,13 +32,13 @@ bs=32
 ne=20000
 lrdk=(3,1 3,1 3,1 3,1 3,1 1,1 1,1 1,1 1,1 1,1)
 lrdc=(64 64 64 64 64 64 64 64 64)
-sw=1e-1
+sw=1
 wd=0
 sw_str=$(echo $sw | sed "s/\./p/")
 lrdk_str=$(echo ${lrdk[@]} | sed "s/ /-/g")
 lrdc_str=$(echo ${lrdc[@]} | sed "s/ /-/g")
 ps=16
-ie=200
+ie=500
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")
@@ -46,7 +46,7 @@ for image in ${images[@]}; do
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
     outdir=../results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_orth/${kernel}_${fwhm}_${scale}_${len}
-    if [ -f $outdir/kernel/epoch-${ne}.png ]; then
+    if [ -f ../$outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")

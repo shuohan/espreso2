@@ -8,38 +8,38 @@ trainer_dir=~/Code/shuo/deep-networks/pytorch-trainer
 simu_dir=~/Code/shuo/utils/lr-simu
 data_dir=/data
 
-images=(/data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-8p0_scale-0p5_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
-        /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
+# images=(/data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-2p0_scale-0p5_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-4p0_scale-0p5_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-8p0_scale-0p5_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-2p0_scale-0p25_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-4p0_scale-0p25_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-8p0_scale-0p25_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-2p0_scale-0p125_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-4p0_scale-0p125_len-13.nii
+#         /data/brainweb/simu/t1_icbm_normal_1mm_pn3_rf0_type-gauss_fwhm-8p0_scale-0p125_len-13.nii)
 
-# images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p5_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p5_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p5_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p25_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p25_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p25_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p125_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p125_len-13.nii
-#         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p125_len-13.nii)
+images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p5_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p25_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-3p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-5p0_scale-0p125_len-13.nii
+        /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p125_len-13.nii)
 
 lr=2e-4
 bs=32
 ne=20000
 lrdk=(3,1 3,1 3,1 3,1 3,1 1,1 1,1 1,1 1,1 1,1)
 lrdc=(64 64 64 64 64 64 64 64 64)
-sw=10
-wd=1e-2
+sw=1
+wd=0
 sw_str=$(echo $sw | sed "s/\./p/")
 lrdk_str=$(echo ${lrdk[@]} | sed "s/ /-/g")
 lrdc_str=$(echo ${lrdc[@]} | sed "s/ /-/g")
 ps=16
-ie=200
+ie=100
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")

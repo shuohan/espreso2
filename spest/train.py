@@ -8,6 +8,7 @@ from collections.abc import Iterable
 import matplotlib.pyplot as plt
 from pathlib import Path
 from enum import Enum
+from scipy.signal import gaussian
 
 from pytorch_trainer.observer import SubjectObserver
 from pytorch_trainer.train import Trainer
@@ -426,7 +427,7 @@ class InitKernelType(str, Enum):
 
     """
     IMPULSE = 'impulse'
-    GAUSSIAN = 'guassian'
+    GAUSSIAN = 'gaussian'
     RECT = 'rect'
     NONE = 'none'
 
@@ -445,8 +446,11 @@ def create_init_kernel(init_kernel_type, kernel_length, scale_factor=None):
     if init_kernel_type is InitKernelType.IMPULSE:
         kernel = torch.zeros([1, 1, kernel_length, 1], dtype=torch.float32)
         kernel[:, :, kernel_length//2, ...] = 1
-    else:
-        raise NotImplementedError
+    elif init_kernel_type is InitKernelType.GAUSSIAN:
+        kernel = gaussian(kernel_length, scale_factor / 2.355, sym=True)
+        kernel = torch.tensor(kernel).float()[None, None, :, None]
+        kernel = kernel / torch.sum(kernel)
+        print(kernel.squeeze())
     return kernel
 
 
@@ -454,7 +458,7 @@ class TrainerKernelInit(Trainer):
     """Initializes the kernel using simulated HR and LR pairs.
 
     """
-    def __init__(self, kernel_net, init_optim, dataloader, init_type='impulse'):
+    def __init__(self, kernel_net, init_optim, dataloader, init_type='gaussian'):
         super().__init__(Config().num_init_epochs)
         self.kernel_net = kernel_net
         self.init_optim = init_optim
@@ -468,7 +472,7 @@ class TrainerKernelInit(Trainer):
 
     def _create_init_kernel(self):
         """Creates the kernel to initialize to."""
-        kernel = create_init_kernel(self.init_type, Config().kernel_length)
+        kernel = create_init_kernel(self.init_type, Config().kernel_length, 1.5)
         return kernel.cuda()
 
     def train(self):

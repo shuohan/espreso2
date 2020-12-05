@@ -36,9 +36,9 @@ for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-.*\)_scale.*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../tests/results_try-neg_sm-init/oasis3_${fwhm}_${scale}_${len}_ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}
+    outdir=../tests/results_try-neg_sm-init_gauss-init/oasis3_${fwhm}_${scale}_${len}_ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-    docker run --gpus device=1 --rm \
+    docker run --gpus device=0 --rm \
         -v $psf_est_dir:$psf_est_dir \
         -v $sssrlib_dir:$sssrlib_dir \
         -v $proc_dir:$proc_dir \
