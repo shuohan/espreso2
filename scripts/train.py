@@ -34,6 +34,7 @@ parser.add_argument('-ps', '--patch-size', default=7, type=int)
 parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
                     help='The number of init epochs (iterations).')
 parser.add_argument('-zp', '--zero-pad-kn', action='store_true')
+parser.add_argument('-in', '--intensity', default=1000.0, type=float)
 args = parser.parse_args()
 
 
@@ -74,6 +75,7 @@ xy = [0, 1, 2]
 xy.remove(args.z_axis)
 obj = nib.load(args.input)
 image = obj.get_fdata(dtype=np.float32)
+
 if args.scale_factor is None:
     zooms = obj.header.get_zooms()
     args.scale_factor = float(zooms[args.z_axis] / zooms[xy[0]])
@@ -91,6 +93,9 @@ for key, value in args.__dict__.items():
         setattr(config, key, value)
 config.add_config('input_image', os.path.abspath(str(args.input)))
 config.add_config('output_dirname', os.path.abspath(str(args.output)))
+
+image = image / image.max() * config.intensity
+print('Image intensity range [{}, {}]'.format(image.min(), image.max()))
 
 kn = KernelNet().cuda() if not config.zero_pad_kn else KernelNetZP().cuda()
 lrd = LowResDiscriminator().cuda()
