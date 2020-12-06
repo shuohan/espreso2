@@ -40,7 +40,7 @@ images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect
         /data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-rect_fwhm-9p0_scale-0p125_len-13.nii)
 
 lr=2e-4
-bs=256
+bs=16
 ne=10000
 lrdk=(3,1 3,1 3,1 1,1 1,1 1,1 1,1 1,1 1,1 1,1)
 lrdc=(64 64 64 64 64 64 64 64 64)
@@ -57,7 +57,7 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_orth_clip/${kernel}_${fwhm}_${scale}_${len}
+    outdir=../results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_orth_clip/${kernel}_${fwhm}_${scale}_${len}_sk
     if [ -f ../$outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
@@ -77,5 +77,5 @@ for image in ${images[@]}; do
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
         ./train.py -i $image -o $outdir -k $kernel -kl 21 -sw ${sw} \
         -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[@]} \
-        -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 0 -ie ${ie}
+        -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 0 -ie ${ie} -sk
 done | rush -j 3 {}
