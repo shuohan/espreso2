@@ -77,7 +77,7 @@ obj = nib.load(args.input)
 image = obj.get_fdata(dtype=np.float32)
 
 if args.scale_factor is None:
-    zooms = obj.header.get_zooms()
+    zooms = np.round(obj.header.get_zooms(), 4).tolist()
     args.scale_factor = float(zooms[args.z_axis] / zooms[xy[0]])
     if not np.isclose(zooms[xy[0]], zooms[xy[1]]):
         raise RuntimeError('The resolutions of x and y are different.')
