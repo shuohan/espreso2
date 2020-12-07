@@ -52,3 +52,7 @@ class Config(Config_):
         self.add_config('symm_kernel', False)
         self.add_config('zero_pad_kn', False)
         self.add_config('intensity', 1000)
+        self.add_config('input_image', None)
+        self.add_config('output_dirname', None)
+        self.add_config('checkpoint', None)
+        self.add_config('weight_stride', (2, 2, 1))

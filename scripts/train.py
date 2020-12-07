@@ -29,6 +29,7 @@ parser.add_argument('-lrdk', '--lrd-kernels', nargs='+', type=str,
 parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
                     nargs='+', type=int)
 parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
+parser.add_argument('-knh', '--kn-num-channels', default=1024, type=int)
 parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
 parser.add_argument('-ps', '--patch-size', default=7, type=int)
 parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
@@ -94,11 +95,8 @@ config = Config()
 for key, value in args.__dict__.items():
     if hasattr(config, key):
         setattr(config, key, value)
-config.add_config('input_image', os.path.abspath(str(args.input)))
-config.add_config('output_dirname', os.path.abspath(str(args.output)))
-
-if args.checkpoint is not None:
-    config.add_config('checkpoint', os.path.abspath(str(args.checkpoint)))
+config.input_image = os.path.abspath(str(args.input))
+config.output_dirname = os.path.abspath(str(args.output))
 
 image = image / image.max() * config.intensity
 print('Image intensity range [{}, {}]'.format(image.min(), image.max()))
@@ -123,8 +121,7 @@ with open(arch_output.joinpath('kn.txt'), 'w') as f:
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
-weight_stride = (2, 2, 1)
-config.add_config('weight_stride', weight_stride)
+config.weight_stride = (2, 2, 1)
 print(config)
 config.save_json(config_output)
 
