@@ -42,13 +42,13 @@ images=(/data/oasis3/simu/sub-OAS30001_ses-d0129_acq-mprage_run-01_T1w_type-gaus
 
 lr=1e-4
 bs=64
-ne=10000
+ne=20000
 # lrdk=(3,1 3,1 3,1 1,1 1,1 1,1 1,1 1,1 1,1 1,1)
 # lrdc=(64 64 64 64 64 64 64 64 64)
 lrdk=(3,1 3,1 3,1 1,1 1,1)
 lrdc=(64 64 64 64)
 sw=1
-wd=1e-2
+wd=1e-1
 sw_str=$(echo $sw | sed "s/\./p/")
 lrdk_str=$(echo ${lrdk[@]} | sed "s/ /-/g")
 lrdc_str=$(echo ${lrdc[@]} | sed "s/ /-/g")

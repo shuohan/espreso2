@@ -35,6 +35,8 @@ parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
                     help='The number of init epochs (iterations).')
 parser.add_argument('-zp', '--zero-pad-kn', action='store_true')
 parser.add_argument('-in', '--intensity', default=1000.0, type=float)
+parser.add_argument('-css', '--checkpoint-save-step', default=5000, type=int)
+parser.add_argument('-c', '--checkpoint', default=None)
 args = parser.parse_args()
 
 
@@ -57,7 +59,7 @@ from spest.networks import KernelNet, LowResDiscriminator, KernelNetZP
 from spest.utils import calc_patch_size
 
 from pytorch_trainer.log import DataQueue, EpochPrinter, EpochLogger
-from pytorch_trainer.save import ImageSaver
+from pytorch_trainer.save import ImageSaver, CheckpointSaver
 
 
 warnings.filterwarnings('ignore')
@@ -70,6 +72,7 @@ log_output = args.output.joinpath('loss.csv')
 eval_log_output = args.output.joinpath('eval.csv')
 config_output = args.output.joinpath('config.json')
 arch_output = args.output.joinpath('arch')
+checkpoint_output = args.output.joinpath('checkpoint')
 
 xy = [0, 1, 2]
 xy.remove(args.z_axis)
@@ -93,6 +96,9 @@ for key, value in args.__dict__.items():
         setattr(config, key, value)
 config.add_config('input_image', os.path.abspath(str(args.input)))
 config.add_config('output_dirname', os.path.abspath(str(args.output)))
+
+if args.checkpoint is not None:
+    config.add_config('checkpoint', os.path.abspath(str(args.checkpoint)))
 
 image = image / image.max() * config.intensity
 print('Image intensity range [{}, {}]'.format(image.min(), image.max()))
@@ -218,12 +224,25 @@ pred_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
 kernel_saver = KernelSaver(kernel_output, step=config.image_save_step,
                            save_init=True, truth=true_kernel)
 
+checkpoint_saver = CheckpointSaver(checkpoint_output,
+                                   step=config.checkpoint_save_step)
+
 queue.register(printer)
 queue.register(logger)
 trainer.register(queue)
 trainer.register(im_saver)
 trainer.register(pred_saver)
 trainer.register(kernel_saver)
+trainer.register(checkpoint_saver)
+
+if args.checkpoint is not None:
+    checkpoint = torch.load(args.checkpoint)
+    kn.load_state_dict(checkpoint['model_state_dict']['kernel_net'])
+    lrd.load_state_dict(checkpoint['model_state_dict']['lr_disc'])
+    kn_optim.load_state_dict(checkpoint['optim_state_dict']['kn_optim'])
+    lrd_optim.load_state_dict(checkpoint['optim_state_dict']['lrd_optim'])
+    trainer.set_epoch_ind(checkpoint['epoch'])
+    print('Load checkpoint.')
 
 if config.num_init_epochs > 0:
     init_optim = Adam(kn.parameters(), lr=config.learning_rate,

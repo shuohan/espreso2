@@ -43,6 +43,7 @@ class Config(Config_):
         self.add_config('boundary_loss_weight', 10)
         self.add_config('weight_decay', 0)
         self.add_config('image_save_step', 100)
+        self.add_config('checkpoint_save_step', 2000)
         self.add_config('eval_step', 100)
         self.add_config('image_save_zoom', 1)
         self.add_config('lrd_kernels', (3, 3, 3, 3, 3))
