@@ -58,3 +58,26 @@ def calc_fwhm(kernel):
         right = interp(half_max)
     fwhm = right - left
     return fwhm, left, right
+
+
+def _interp(x1, x2, y1, y2):
+    a = (x1 - x2) / (y1 - y2)
+    b = (x2 * y1 - x1 * y2) / (y1 - y2)
+    def func(y):
+        return a * y + b
+    return func
+
+
+def calc_fwhm_torch(kernel):
+    kernel = kernel.detach().squeeze()
+    half_max = kernel.max() / 2
+    indices = torch.where(kernel > half_max)[0]
+    left = indices[0]
+    if left > 0:
+        interp = _interp(left - 1, left, kernel[left - 1], kernel[left])
+        left  = interp(half_max)
+    right = indices[-1]
+    if right < len(kernel) - 1:
+        interp = _interp(right + 1, right, kernel[right + 1], kernel[right])
+        right = interp(half_max)
+    return right - left
