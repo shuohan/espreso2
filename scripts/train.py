@@ -130,32 +130,55 @@ print(lrd_optim)
 # transforms = [] if args.no_aug else create_rot_flip()
 transforms = [Identity(), Flip((0, )), Flip((2, )), Flip((0, 2))]
 
-sample_weight_xz_output = args.output.joinpath('sample_weights_xz')
-sample_weight_xz_output.mkdir(exist_ok=True)
-sample_weight_yz_output = args.output.joinpath('sample_weights_yz')
-sample_weight_yz_output.mkdir(exist_ok=True)
+sample_weight_xz_gx_output = args.output.joinpath('sample_weights_xz_gx')
+sample_weight_xz_gz_output = args.output.joinpath('sample_weights_xz_gz')
+sample_weight_yz_gy_output = args.output.joinpath('sample_weights_yz_gy')
+sample_weight_yz_gz_output = args.output.joinpath('sample_weights_yz_gz')
 
 voxel_size = [zooms[xy[0]], zooms[xy[1]], zooms[args.z_axis]]
 patch_size_xz = config.patch_size
 patch_size_yz = np.array(config.patch_size)[[1, 0, 2]].tolist()
-patches_xz = Patches(patch_size_xz, image=image, x=xy[0], y=xy[1],
-                     z=args.z_axis, transforms=transforms, sigma=1,
-                     voxel_size=voxel_size, weight_stride=config.weight_stride,
-                     weight_dir=sample_weight_xz_output, avg_grad=False,
-                     compress=True, named=True, verbose=False).cuda()
-patches_yz = Patches(patch_size_yz, patches=patches_xz,
-                     transforms=transforms, sigma=1,
-                     voxel_size=voxel_size, weight_stride=config.weight_stride,
-                     weight_dir=sample_weight_yz_output, avg_grad=False,
-                     compress=True, named=True, verbose=False).cuda()
-patches = PatchesOr(patches_xz, patches_yz)
-dataloader = patches.get_dataloader(config.batch_size,
-                                    num_workers=args.num_workers)
-print('Patches')
-print('----------')
-print(patches)
 
-trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, dataloader)
+patches_xz_gx = Patches(patch_size_xz, image=image, x=xy[0], y=xy[1],
+                        z=args.z_axis, transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[True, False, False],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_xz_gx_output,
+                        compress=True, named=True, verbose=False).cuda()
+patches_xz_gz = Patches(patch_size_xz, patches=patches_xz_gx, 
+                        transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[False, False, True],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_xz_gz_output,
+                        compress=True, named=True, verbose=False).cuda()
+
+patches_yz_gy = Patches(patch_size_yz, patches=patches_xz_gx, 
+                        transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[False, True, False],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_yz_gy_output,
+                        compress=True, named=True, verbose=False).cuda()
+patches_yz_gz = Patches(patch_size_yz, patches=patches_xz_gx, 
+                        transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[False, False, True],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_yz_gz_output,
+                        compress=True, named=True, verbose=False).cuda()
+
+patches_xy = PatchesOr(patches_xz_gx, patches_yz_gy)
+patches_z = PatchesOr(patches_xz_gz, patches_yz_gz)
+loader_xy = patches_xy.get_dataloader(config.batch_size, num_workers=args.num_workers)
+loader_z = patches_z.get_dataloader(config.batch_size, num_workers=args.num_workers)
+
+print('Patches XY')
+print('----------')
+print(patches_xy)
+
+print('Patches Z')
+print('----------')
+print(patches_z)
+
+trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, loader_xy, loader_z)
 queue = DataQueue(['kn_gan_loss', 'smoothness_loss', 'center_loss',
                    'boundary_loss', 'kn_tot_loss', 'lrd_gan_loss'])
 printer = EpochPrinter(print_sep=False, decimals=2)
@@ -205,7 +228,7 @@ trainer.register(kernel_saver)
 if config.num_init_epochs > 0:
     init_optim = Adam(kn.parameters(), lr=config.learning_rate,
                       betas=(0.5, 0.999))
-    init_trainer = TrainerKernelInit(kn, kn_optim, dataloader)
+    init_trainer = TrainerKernelInit(kn, kn_optim, loader_xy)
     print(init_optim)
 
     init_im_output = args.output.joinpath('init_patches')

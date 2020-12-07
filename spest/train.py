@@ -163,13 +163,14 @@ class TrainerHRtoLR(Trainer):
         lrd_tot_loss (torch.Tensor): The total loss for :attr:`lr_disc`.
 
     """
-    def __init__(self, kernel_net, lr_disc, kn_optim, lrd_optim, dataloader):
+    def __init__(self, kernel_net, lr_disc, kn_optim, lrd_optim, loader_xy, loader_z):
         super().__init__(Config().num_epochs)
         self.kernel_net = kernel_net
         self.lr_disc = lr_disc
         self.kn_optim = kn_optim
         self.lrd_optim = lrd_optim
-        self.dataloader = dataloader
+        self.loader_xy = loader_xy
+        self.loader_z = loader_z
         self.scale_factor = Config().scale_factor
 
         self._gan_loss_func = GANLoss().cuda()
@@ -240,10 +241,10 @@ class TrainerHRtoLR(Trainer):
         
         """
         self.kn_optim.zero_grad()
-        for batch in self.dataloader:
+        for batch in self.loader_xy:
             self._kn_in_names = batch.name
             self._kn_in = batch.data
-        for batch in self.dataloader: # transpose
+        for batch in self.loader_z: # transpose
             self._kn_t_in_names = batch.name
             self._kn_t_in = batch.data
 
@@ -292,10 +293,10 @@ class TrainerHRtoLR(Trainer):
         """Trains the low-resolution discriminator :attr:`lr_disc`."""
         self.lrd_optim.zero_grad()
 
-        for batch in self.dataloader: # Note: len(dataloader) == 1
+        for batch in self.loader_xy: # Note: len(dataloader) == 1
             self._lrd_fake_names = batch.name
             self._lrd_fake = batch.data
-        for batch in self.dataloader:
+        for batch in self.loader_z:
             self._lrd_real_names = batch.name
             self._lrd_real = batch.data
 
@@ -316,11 +317,11 @@ class TrainerHRtoLR(Trainer):
 
     @property
     def num_batches(self):
-        return len(self.dataloader)
+        return 1 # len(self.dataloader)
 
     @property
     def batch_size(self):
-        return self.dataloader.batch_size
+        return self.loader_xy.batch_size
 
     @property
     def batch_ind(self):
