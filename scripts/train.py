@@ -245,7 +245,7 @@ if args.checkpoint is not None:
 if config.num_init_epochs > 0:
     init_optim = Adam(kn.parameters(), lr=config.learning_rate,
                       betas=(0.5, 0.999))
-    init_trainer = TrainerKernelInit(kn, kn_optim, loader_xy)
+    init_trainer = TrainerKernelInit(kn, kn_optim, loader_xy, init_type='impulse')
     print(init_optim)
 
     init_im_output = args.output.joinpath('init_patches')
