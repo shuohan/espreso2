@@ -27,6 +27,7 @@ class Config(Config_):
         super().__init__()
         self.add_config('kn_num_channels', 1024)
         self.add_config('kn_num_convs', 6)
+        self.add_config('kn_kernel_size', 3)
         self.add_config('kn_update_step', 1)
         self.add_config('kernel_avg_beta', 0.99)
         self.add_config('kernel_length', 19)

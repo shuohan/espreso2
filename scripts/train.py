@@ -30,6 +30,7 @@ parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
                     nargs='+', type=int)
 parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
 parser.add_argument('-knh', '--kn-num-channels', default=1024, type=int)
+parser.add_argument('-knk', '--kn-kernel-sizse', default=3, type=int)
 parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
 parser.add_argument('-ps', '--patch-size', default=7, type=int)
 parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,

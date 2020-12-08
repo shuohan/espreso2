@@ -54,6 +54,8 @@ lrdk_str=$(echo ${lrdk[@]} | sed "s/ /-/g")
 lrdc_str=$(echo ${lrdc[@]} | sed "s/ /-/g")
 ps=16
 ie=200
+
+knk=3
 knc=3
 knh=256
 
@@ -62,7 +64,7 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_knc-${knc}_knh-${knh}_orth_clip/${kernel}_${fwhm}_${scale}_${len}
+    outdir=../results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_knc-${knc}_knh-${knh}_knk-${knk}_orth_clip/${kernel}_${fwhm}_${scale}_${len}
     if [ -f ../$outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
@@ -83,5 +85,5 @@ for image in ${images[@]}; do
         ./train.py -i $image -o $outdir -k $kernel -kl 21 -sw ${sw} \
         -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[@]} \
         -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 0 -ie ${ie} \
-        -knc ${knc} -knh ${knh}
+        -knc ${knc} -knh ${knh} -knk ${knk}
 done | rush -j 6 {}

@@ -14,7 +14,7 @@ class _KernelNet(nn.Sequential):
         super().__init__()
         config = Config()
 
-        ks = 3
+        ks = config.kn_kernel_size
         num_ch = config.kn_num_channels
         num_convs = config.kn_num_convs
 
@@ -23,9 +23,10 @@ class _KernelNet(nn.Sequential):
         self.reset_parameters()
 
         for i in range(num_convs - 1):
-            self.add_module('conv%d' % i, self._create_conv(num_ch, ks))
+            self.add_module('conv%d' % i, self._create_conv(num_ch, num_ch, ks))
             # self.add_module('relu%d' % i, nn.ReLU())
-        self.add_module('conv%d' % (num_convs - 1), self._create_conv(1, ks))
+        conv = self._create_conv(num_ch, 1, ks)
+        self.add_module('conv%d' % (num_convs - 1), conv)
 
         # Calling self._calc_kernel() at init cannot put tensors into cuda
         self._kernel_cuda = None
@@ -34,7 +35,7 @@ class _KernelNet(nn.Sequential):
     def _calc_input_weight_size(self, ks):
         raise NotImplementedError
 
-    def _create_conv(self, out_channels, kernel_size):
+    def _create_conv(self, in_channels, out_channels, kernel_size):
         raise NotImplementedError
 
     def _calc_kernel(self):
@@ -105,8 +106,7 @@ class KernelNet(_KernelNet):
     def _calc_input_weight_size(self, ks):
         return Config().kernel_length + (ks - 1) * Config().kn_num_convs 
 
-    def _create_conv(self, out_channels, kernel_size):
-        in_channels = Config().kn_num_channels
+    def _create_conv(self, in_channels, out_channels, kernel_size):
         return nn.Conv2d(in_channels, out_channels, (kernel_size, 1))
 
 
@@ -117,8 +117,7 @@ class KernelNetZP(_KernelNet):
     def _calc_input_weight_size(self, ks):
         return Config().kernel_length
 
-    def _create_conv(self, out_channels, kernel_size):
-        in_channels = Config().kn_num_channels
+    def _create_conv(self, in_channels, out_channels, kernel_size):
         padding = (kernel_size // 2, 0)
         return nn.Conv2d(in_channels, out_channels, (kernel_size, 1),
                          padding=padding)

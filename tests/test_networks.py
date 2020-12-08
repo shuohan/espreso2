@@ -17,6 +17,11 @@ def test_networks():
     image = np.array(Image.open('lena.png').convert('L'))
     image_cuda = torch.tensor(image).float().cuda()[None, None, ...]
 
+    config = Config()
+    config.kn_kernel_size = 2
+    config.kn_num_channels = 256
+    config.kn_num_convs = 3
+
     kn = KernelNet().cuda()
     print(kn)
     assert kn.kernel_cuda.shape == (1, 1, 19, 1)
@@ -35,19 +40,19 @@ def test_networks():
     assert lrd(image_cuda).shape == (1, 1, 502, 502)
     lrd_dot = make_dot(image_cuda, lrd)
     lrd_dot.render(dirname.joinpath('lrd'))
-
-    kn = KernelNetZP().cuda()
-    print(kn)
-    assert kn.kernel_cuda.shape == (1, 1, 19, 1)
-    assert kn(image_cuda).shape == (1, 1, 494, 512)
-    assert torch.isclose(torch.sum(kn.kernel_cuda), torch.tensor(1).float())
-    kn_dot = make_dot(image_cuda, kn)
-    kn_dot.render(dirname.joinpath('knzp'))
-
-    fig = plt.figure()
-    kernel = kn.kernel.numpy().squeeze()
-    plt.plot(kernel)
-    fig.savefig(dirname.joinpath('kernel_zp.png'))
+# 
+#     kn = KernelNetZP().cuda()
+#     print(kn)
+#     assert kn.kernel_cuda.shape == (1, 1, 19, 1)
+#     assert kn(image_cuda).shape == (1, 1, 494, 512)
+#     assert torch.isclose(torch.sum(kn.kernel_cuda), torch.tensor(1).float())
+#     kn_dot = make_dot(image_cuda, kn)
+#     kn_dot.render(dirname.joinpath('knzp'))
+# 
+#     fig = plt.figure()
+#     kernel = kn.kernel.numpy().squeeze()
+#     plt.plot(kernel)
+#     fig.savefig(dirname.joinpath('kernel_zp.png'))
 
 
 if __name__ == '__main__':
