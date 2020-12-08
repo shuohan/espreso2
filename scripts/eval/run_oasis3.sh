@@ -55,7 +55,7 @@ lrdc_str=$(echo ${lrdc[@]} | sed "s/ /-/g")
 ps=16
 ie=200
 
-knk=3
+knk=2
 knc=3
 knh=256
 
@@ -64,7 +64,7 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-.*\)_len.*/\1/")
     kernel=$(echo $image | sed "s/.*\(type-.*\)_fw.*/\1/")
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
-    outdir=../results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_knc-${knc}_knh-${knh}_knk-${knk}_orth_clip/${kernel}_${fwhm}_${scale}_${len}
+    outdir=/data/spest/results/simu-oasis3_lr-${lr}_bs-${bs}_ne-${ne}_ie-${ie}_sw-${sw_str}_wd-${wd}_ps-${ps}_lrdk-${lrdk_str}_lrdc-${lrdc_str}_knc-${knc}_knh-${knh}_knk-${knk}_orth_clip/${kernel}_${fwhm}_${scale}_${len}
     if [ -f ../$outdir/kernel/epoch-${ne}.png ]; then
         continue
     fi
