@@ -243,10 +243,10 @@ if args.checkpoint is not None:
     print('Load checkpoint.')
 
 if config.num_init_epochs > 0:
-    init_optim = Adam(kn.parameters(), lr=config.learning_rate,
-                      betas=(0.5, 0.999))
+    # init_optim = Adam(kn.parameters(), lr=config.learning_rate,
+    #                   betas=(0.5, 0.999), weight_decay=config.weight_decay)
+    # print(init_optim)
     init_trainer = TrainerKernelInit(kn, kn_optim, loader_xy, init_type='impulse')
-    print(init_optim)
 
     init_im_output = args.output.joinpath('init_patches')
     init_kernel_output = args.output.joinpath('init_kernel')

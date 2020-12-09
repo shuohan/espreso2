@@ -19,7 +19,7 @@ sw_str=$(echo $sw | sed "s/\./p/")
 lrdk_str=$(echo ${lrdk[@]} | sed "s/ /-/g")
 lrdc_str=$(echo ${lrdc[@]} | sed "s/ /-/g")
 ps=16
-ie=200
+ie=100
 
 knk=3
 knc=3
@@ -55,12 +55,12 @@ simu_types=(type-gauss_fwhm-2p0_scale-0p125_len-13
             type-rect_fwhm-9p0_scale-0p25_len-13
             type-rect_fwhm-9p0_scale-0p5_len-13)
 
-output_dir=/data/spest/ipmi_simu
+output_dir=/data/spest/ipmi_simu_test
 
 for prefix in ${prefixes[@]}; do
     for simu_type in ${simu_types[@]}; do
         suboutdir=$output_dir/$(basename ${prefix})/${simu_type}
-        if [ -f ../$suboutdir/kernel/epoch-${ne}.png ]; then
+        if [ -f $suboutdir/kernel/epoch-${ne}.png ]; then
             continue
         fi
         image=${prefix}_${simu_type}.nii
@@ -82,5 +82,4 @@ for prefix in ${prefixes[@]}; do
             -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 1 -ie ${ie} \
             -knc ${knc} -knh ${knh} -knk ${knk}
     done
-    break
 done | rush -j 3 {}
