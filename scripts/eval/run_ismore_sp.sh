@@ -10,7 +10,7 @@ data_dir=/data
 
 lr=2e-4
 bs=64
-ne=10000
+ne=15000
 lrdk=(3,1 3,1 3,1 1,1 1,1)
 lrdc=(64 64 64 64)
 sw=1
@@ -43,9 +43,10 @@ prefixes=(/data/oasis3/ismore_simu/sub-OAS30016_ses-d0021_acq-mprage_T1w
           /data/oasis3/ismore_simu/sub-OAS30080_ses-d0048_acq-mprage_T1w)
 
 simu_types=(type-gauss_fwhm-2p0_scale-0p25_len-13
-            type-gauss_fwhm-3p2_scale-0p25_len-13
-            type-gauss_fwhm-4p8_scale-0p25_len-13
             type-gauss_fwhm-6p0_scale-0p25_len-13)
+
+# simu_types=(type-gauss_fwhm-3p2_scale-0p25_len-13
+#             type-gauss_fwhm-4p8_scale-0p25_len-13)
 
 output_dir=/data/spest/ipmi_ismore_sp_est
 
@@ -53,26 +54,25 @@ for prefix in ${prefixes[@]}; do
     for simu_type in ${simu_types[@]}; do
         suboutdir=$output_dir/$(basename ${prefix})/${simu_type}
         if [ -f $suboutdir/kernel/epoch-${ne}.png ]; then
-            echo $suboutdir
             continue
         fi
-        # image=${prefix}_${simu_type}.nii
-        # kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-        # echo docker run --gpus device=1 --rm \
-        #     -v $psf_est_dir:$psf_est_dir \
-        #     -v $sssrlib_dir:$sssrlib_dir \
-        #     -v $proc_dir:$proc_dir \
-        #     -v $trainer_dir:$trainer_dir \
-        #     -v $simu_dir:$simu_dir \
-        #     -v $data_dir:$data_dir \
-        #     -v $config_dir:$config_dir \
-        #     --user $(id -u):$(id -g) \
-        #     -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir:$simu_dir \
-        #     -w $psf_est_dir/scripts -t \
-        #     pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
-        #     ./train.py -i $image -o $suboutdir -k $kernel -kl 21 -sw ${sw} \
-        #     -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[@]} \
-        #     -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 1 -ie ${ie} \
-        #     -knc ${knc} -knh ${knh} -knk ${knk}
+        image=${prefix}_${simu_type}.nii
+        kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
+        echo docker run --gpus device=1 --rm \
+            -v $psf_est_dir:$psf_est_dir \
+            -v $sssrlib_dir:$sssrlib_dir \
+            -v $proc_dir:$proc_dir \
+            -v $trainer_dir:$trainer_dir \
+            -v $simu_dir:$simu_dir \
+            -v $data_dir:$data_dir \
+            -v $config_dir:$config_dir \
+            --user $(id -u):$(id -g) \
+            -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir:$simu_dir \
+            -w $psf_est_dir/scripts -t \
+            pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
+            ./train.py -i $image -o $suboutdir -k $kernel -kl 21 -sw ${sw} \
+            -isz 4 -bs ${bs} -e ${ne} -w 0 -lr ${lr} -lrdk ${lrdk[@]} \
+            -lrdc ${lrdc[@]} -wd ${wd} -ps ${ps} -ns 1 -ie ${ie} \
+            -knc ${knc} -knh ${knh} -knk ${knk}
     done
-done # | rush -j 2 {}
+done | rush -j 2 {}

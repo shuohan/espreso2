@@ -46,6 +46,9 @@ for subj in subjects:
     true_filename = Path(true_dirname, subj).with_suffix('.nii.gz')
     iso_image = nib.load(true_filename).get_fdata(dtype=np.float32)
 
+    max_val = np.max(iso_image)
+    min_val = np.min(iso_image)
+
     assert true_filename.is_file()
     est_basename = 'avg_epoch-{}.npy'.format(num_epochs)
     for t in types:
@@ -93,7 +96,7 @@ for subj in subjects:
                 fwhm_error = np.abs(est_fwhm - ref_fwhm)
                 prof_error = np.sum(np.abs(est_kernel - ref_kernel))
 
-                psnr = calc_psnr_3d(ref_image, est_image, mask)
+                psnr = calc_psnr_3d(ref_image, est_image, mask, [min_val, max_val])
                 ssim = calc_ssim_3d(ref_image, est_image, mask)
 
                 fig = plt.figure()
@@ -121,14 +124,14 @@ for subj in subjects:
                                    ('type', t),
                                    ('fwhm', f.replace('p', '.')),
                                    ('scale', s.replace('p', '.')),
-                                   ('fwhm error', '%.4f' % fwhm_error),
-                                   ('profile error', '%.4f' % prof_error),
-                                   ('psnr', '%.4f' % psnr),
-                                   ('ssim', '%.4f' % ssim)])
+                                   ('fwhm error', fwhm_error),
+                                   ('profile error', prof_error),
+                                   ('psnr', psnr),
+                                   ('ssim', ssim)])
 
                 df.append(tab)
 
 df = pd.DataFrame(df)
 print(df)
 
-df.to_csv(Path(output_dirname, 'dataframe.csv'))
+df.to_csv(Path(output_dirname, 'dataframe.csv'), index=False)

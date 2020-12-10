@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-j
 
 psf_est_dir=$(realpath $(dirname $0)/../..)
 simu_dir=~/Code/shuo/utils/lr-simu
