@@ -2,8 +2,6 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 
-from lr_simu.kernel import create_gaussian_kernel
-
 
 class GANLoss(torch.nn.Module):
     r"""Loss of the original GAN with cross entropy.

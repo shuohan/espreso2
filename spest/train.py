@@ -10,10 +10,10 @@ from pathlib import Path
 from enum import Enum
 from scipy.signal import gaussian
 
-from pytorch_trainer.observer import SubjectObserver
-from pytorch_trainer.train import Trainer
-from pytorch_trainer.utils import NamedData
-from pytorch_trainer.save import ThreadedSaver, ImageThread, SavePlot
+from ptxl.observer import SubjectObserver
+from ptxl.train import Trainer
+from ptxl.utils import NamedData
+from ptxl.save import ThreadedSaver, ImageThread, SavePlot
 
 from .config import Config
 from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
