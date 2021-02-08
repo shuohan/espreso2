@@ -29,11 +29,16 @@ parser.add_argument('-lrdk', '--lrd-kernels', nargs='+', type=str,
 parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
                     nargs='+', type=int)
 parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
+parser.add_argument('-knh', '--kn-num-channels', default=1024, type=int)
+parser.add_argument('-knk', '--kn-kernel-size', default=3, type=int)
 parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
 parser.add_argument('-ps', '--patch-size', default=7, type=int)
 parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
                     help='The number of init epochs (iterations).')
 parser.add_argument('-zp', '--zero-pad-kn', action='store_true')
+parser.add_argument('-in', '--intensity', default=1000.0, type=float)
+parser.add_argument('-css', '--checkpoint-save-step', default=5000, type=int)
+parser.add_argument('-c', '--checkpoint', default=None)
 args = parser.parse_args()
 
 
@@ -56,7 +61,7 @@ from spest.networks import KernelNet, LowResDiscriminator, KernelNetZP
 from spest.utils import calc_patch_size
 
 from pytorch_trainer.log import DataQueue, EpochPrinter, EpochLogger
-from pytorch_trainer.save import ImageSaver
+from pytorch_trainer.save import ImageSaver, CheckpointSaver
 
 
 warnings.filterwarnings('ignore')
@@ -69,13 +74,15 @@ log_output = args.output.joinpath('loss.csv')
 eval_log_output = args.output.joinpath('eval.csv')
 config_output = args.output.joinpath('config.json')
 arch_output = args.output.joinpath('arch')
+checkpoint_output = args.output.joinpath('checkpoint')
 
 xy = [0, 1, 2]
 xy.remove(args.z_axis)
 obj = nib.load(args.input)
 image = obj.get_fdata(dtype=np.float32)
+
 if args.scale_factor is None:
-    zooms = obj.header.get_zooms()
+    zooms = np.round(obj.header.get_zooms(), 4).tolist()
     args.scale_factor = float(zooms[args.z_axis] / zooms[xy[0]])
     if not np.isclose(zooms[xy[0]], zooms[xy[1]]):
         raise RuntimeError('The resolutions of x and y are different.')
@@ -89,8 +96,11 @@ config = Config()
 for key, value in args.__dict__.items():
     if hasattr(config, key):
         setattr(config, key, value)
-config.add_config('input_image', os.path.abspath(str(args.input)))
-config.add_config('output_dirname', os.path.abspath(str(args.output)))
+config.input_image = os.path.abspath(str(args.input))
+config.output_dirname = os.path.abspath(str(args.output))
+
+image = image / image.max() * config.intensity
+print('Image intensity range [{}, {}]'.format(image.min(), image.max()))
 
 kn = KernelNet().cuda() if not config.zero_pad_kn else KernelNetZP().cuda()
 lrd = LowResDiscriminator().cuda()
@@ -112,8 +122,7 @@ with open(arch_output.joinpath('kn.txt'), 'w') as f:
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
-weight_stride = (2, 2, 1)
-config.add_config('weight_stride', weight_stride)
+config.weight_stride = (2, 2, 1)
 print(config)
 config.save_json(config_output)
 
@@ -125,32 +134,55 @@ print(lrd_optim)
 # transforms = [] if args.no_aug else create_rot_flip()
 transforms = [Identity(), Flip((0, )), Flip((2, )), Flip((0, 2))]
 
-sample_weight_xz_output = args.output.joinpath('sample_weights_xz')
-sample_weight_xz_output.mkdir(exist_ok=True)
-sample_weight_yz_output = args.output.joinpath('sample_weights_yz')
-sample_weight_yz_output.mkdir(exist_ok=True)
+sample_weight_xz_gx_output = args.output.joinpath('sample_weights_xz_gx')
+sample_weight_xz_gz_output = args.output.joinpath('sample_weights_xz_gz')
+sample_weight_yz_gy_output = args.output.joinpath('sample_weights_yz_gy')
+sample_weight_yz_gz_output = args.output.joinpath('sample_weights_yz_gz')
 
 voxel_size = [zooms[xy[0]], zooms[xy[1]], zooms[args.z_axis]]
 patch_size_xz = config.patch_size
 patch_size_yz = np.array(config.patch_size)[[1, 0, 2]].tolist()
-patches_xz = Patches(patch_size_xz, image=image, x=xy[0], y=xy[1],
-                     z=args.z_axis, transforms=transforms, sigma=1,
-                     voxel_size=voxel_size, weight_stride=config.weight_stride,
-                     weight_dir=sample_weight_xz_output, avg_grad=False,
-                     compress=True, named=True, verbose=False).cuda()
-patches_yz = Patches(patch_size_yz, patches=patches_xz,
-                     transforms=transforms, sigma=1,
-                     voxel_size=voxel_size, weight_stride=config.weight_stride,
-                     weight_dir=sample_weight_yz_output, avg_grad=False,
-                     compress=True, named=True, verbose=False).cuda()
-patches = PatchesOr(patches_xz, patches_yz)
-dataloader = patches.get_dataloader(config.batch_size,
-                                    num_workers=args.num_workers)
-print('Patches')
-print('----------')
-print(patches)
 
-trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, dataloader)
+patches_xz_gx = Patches(patch_size_xz, image=image, x=xy[0], y=xy[1],
+                        z=args.z_axis, transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[True, False, False],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_xz_gx_output,
+                        compress=True, named=True, verbose=False).cuda()
+patches_xz_gz = Patches(patch_size_xz, patches=patches_xz_gx, 
+                        transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[False, False, True],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_xz_gz_output,
+                        compress=True, named=True, verbose=False).cuda()
+
+patches_yz_gy = Patches(patch_size_yz, patches=patches_xz_gx, 
+                        transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[False, True, False],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_yz_gy_output,
+                        compress=True, named=True, verbose=False).cuda()
+patches_yz_gz = Patches(patch_size_yz, patches=patches_xz_gx, 
+                        transforms=transforms, sigma=1,
+                        voxel_size=voxel_size, use_grads=[False, False, True],
+                        weight_stride=config.weight_stride, avg_grad=False,
+                        weight_dir=sample_weight_yz_gz_output,
+                        compress=True, named=True, verbose=False).cuda()
+
+patches_xy = PatchesOr(patches_xz_gx, patches_yz_gy)
+patches_z = PatchesOr(patches_xz_gz, patches_yz_gz)
+loader_xy = patches_xy.get_dataloader(config.batch_size, num_workers=args.num_workers)
+loader_z = patches_z.get_dataloader(config.batch_size, num_workers=args.num_workers)
+
+print('Patches XY')
+print('----------')
+print(patches_xy)
+
+print('Patches Z')
+print('----------')
+print(patches_z)
+
+trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, loader_xy, loader_z)
 queue = DataQueue(['kn_gan_loss', 'smoothness_loss', 'center_loss',
                    'boundary_loss', 'kn_tot_loss', 'lrd_gan_loss'])
 printer = EpochPrinter(print_sep=False, decimals=2)
@@ -190,18 +222,31 @@ pred_saver = ImageSaver(im_output, attrs=attrs, step=config.image_save_step,
 kernel_saver = KernelSaver(kernel_output, step=config.image_save_step,
                            save_init=True, truth=true_kernel)
 
+checkpoint_saver = CheckpointSaver(checkpoint_output,
+                                   step=config.checkpoint_save_step)
+
 queue.register(printer)
 queue.register(logger)
 trainer.register(queue)
 trainer.register(im_saver)
 trainer.register(pred_saver)
 trainer.register(kernel_saver)
+trainer.register(checkpoint_saver)
+
+if args.checkpoint is not None:
+    checkpoint = torch.load(args.checkpoint)
+    kn.load_state_dict(checkpoint['model_state_dict']['kernel_net'])
+    lrd.load_state_dict(checkpoint['model_state_dict']['lr_disc'])
+    kn_optim.load_state_dict(checkpoint['optim_state_dict']['kn_optim'])
+    lrd_optim.load_state_dict(checkpoint['optim_state_dict']['lrd_optim'])
+    trainer.set_epoch_ind(checkpoint['epoch'])
+    print('Load checkpoint.')
 
 if config.num_init_epochs > 0:
-    init_optim = Adam(kn.parameters(), lr=config.learning_rate,
-                      betas=(0.5, 0.999))
-    init_trainer = TrainerKernelInit(kn, kn_optim, dataloader)
-    print(init_optim)
+    # init_optim = Adam(kn.parameters(), lr=config.learning_rate,
+    #                   betas=(0.5, 0.999), weight_decay=config.weight_decay)
+    # print(init_optim)
+    init_trainer = TrainerKernelInit(kn, kn_optim, loader_xy, init_type='impulse')
 
     init_im_output = args.output.joinpath('init_patches')
     init_kernel_output = args.output.joinpath('init_kernel')

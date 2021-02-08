@@ -8,6 +8,7 @@ from collections.abc import Iterable
 import matplotlib.pyplot as plt
 from pathlib import Path
 from enum import Enum
+from scipy.signal import gaussian
 
 from pytorch_trainer.observer import SubjectObserver
 from pytorch_trainer.train import Trainer
@@ -162,13 +163,14 @@ class TrainerHRtoLR(Trainer):
         lrd_tot_loss (torch.Tensor): The total loss for :attr:`lr_disc`.
 
     """
-    def __init__(self, kernel_net, lr_disc, kn_optim, lrd_optim, dataloader):
+    def __init__(self, kernel_net, lr_disc, kn_optim, lrd_optim, loader_xy, loader_z):
         super().__init__(Config().num_epochs)
         self.kernel_net = kernel_net
         self.lr_disc = lr_disc
         self.kn_optim = kn_optim
         self.lrd_optim = lrd_optim
-        self.dataloader = dataloader
+        self.loader_xy = loader_xy
+        self.loader_z = loader_z
         self.scale_factor = Config().scale_factor
 
         self._gan_loss_func = GANLoss().cuda()
@@ -211,9 +213,6 @@ class TrainerHRtoLR(Trainer):
 
         self._batch_ind = -1
 
-        self._stage_kernel = torch.zeros_like(self.kernel_net.kernel_cuda)
-        self._stage_kernel[:, :, Config().kernel_length//2, :] = 1
-
     def get_model_state_dict(self):
         return {'kernel_net': self.kernel_net.state_dict(),
                 'lr_disc': self.lr_disc.state_dict()}
@@ -232,9 +231,6 @@ class TrainerHRtoLR(Trainer):
             self._train_lr_disc()
             if self.epoch_ind % Config().kn_update_step == 0:
                 self._train_kernel_net()
-            if self.epoch_ind % Config().num_epochs_per_stage == 0:
-                print('Update stage kernel')
-                self._stage_kernel = self.kernel_net.avg_kernel.detach()
 
             self.notify_observers_on_batch_end()
             self.notify_observers_on_epoch_end()
@@ -245,10 +241,10 @@ class TrainerHRtoLR(Trainer):
         
         """
         self.kn_optim.zero_grad()
-        for batch in self.dataloader:
+        for batch in self.loader_xy:
             self._kn_in_names = batch.name
             self._kn_in = batch.data
-        for batch in self.dataloader: # transpose
+        for batch in self.loader_z: # transpose
             self._kn_t_in_names = batch.name
             self._kn_t_in = batch.data
 
@@ -263,9 +259,12 @@ class TrainerHRtoLR(Trainer):
 
         # self.kn_gan_loss = (self._gan_loss_func(self._kn_prob, True) \
         #     + self._gan_loss_func(self._kn_t_prob, False)) / 2
-        self.kn_gan_loss = self._gan_loss_func(self._kn_prob, True)
+        self.kn_gan_loss = -(self._gan_loss_func(self._kn_prob, False) \
+            + self._gan_loss_func(self._kn_t_prob, True)) / 2
+        # self.kn_gan_loss = self._gan_loss_func(self._kn_prob, True)
         self.kn_tot_loss = self.kn_gan_loss + self._calc_reg()
         self.kn_tot_loss.backward()
+        torch.nn.utils.clip_grad_value_(self.kernel_net.parameters(), 1)
         self.kn_optim.step()
 
         self.kernel_net.update_kernel()
@@ -279,29 +278,33 @@ class TrainerHRtoLR(Trainer):
     def _calc_reg(self):
         """Calculates kernel regularization."""
         kernel = self.kernel_net.kernel_cuda
-        self.smoothness_loss = self._smoothness_loss_func(kernel)
         self.center_loss = self._center_loss_func(kernel)
         self.boundary_loss = self._boundary_loss_func(kernel)
-        loss = Config().smoothness_loss_weight * self.smoothness_loss \
-             + Config().center_loss_weight * self.center_loss \
+        loss = Config().center_loss_weight * self.center_loss \
              + Config().boundary_loss_weight * self.boundary_loss
+
+        if self.epoch_ind <= Config().smoothness_loss_epochs:
+            self.smoothness_loss = self._smoothness_loss_func(kernel)
+            loss += Config().smoothness_loss_weight * self.smoothness_loss
+            
         return loss
 
     def _train_lr_disc(self):
         """Trains the low-resolution discriminator :attr:`lr_disc`."""
         self.lrd_optim.zero_grad()
 
-        for batch in self.dataloader: # Note: len(dataloader) == 1
+        for batch in self.loader_xy: # Note: len(dataloader) == 1
             self._lrd_fake_names = batch.name
             self._lrd_fake = batch.data
-        for batch in self.dataloader:
+        for batch in self.loader_z:
             self._lrd_real_names = batch.name
             self._lrd_real = batch.data
 
         with torch.no_grad():
             self._lrd_fake_blur = self.kernel_net(self._lrd_fake)
             self._lrd_fake_alias = self._create_aliasing(self._lrd_fake_blur)
-            self._lrd_real_blur = F.conv2d(self._lrd_real, self._stage_kernel)
+            self._lrd_real_blur = self.kernel_net(self._lrd_real)
+            # self._lrd_real_blur = F.conv2d(self._lrd_real, self._stage_kernel)
             self._lrd_real_alias = self._create_aliasing(self._lrd_real_blur)
             self._lrd_real_alias_t = self._lrd_real_alias.permute(0, 1, 3, 2)
         self._lrd_fake_prob = self.lr_disc(self._lrd_fake_alias.detach())
@@ -314,11 +317,11 @@ class TrainerHRtoLR(Trainer):
 
     @property
     def num_batches(self):
-        return len(self.dataloader)
+        return 1 # len(self.dataloader)
 
     @property
     def batch_size(self):
-        return self.dataloader.batch_size
+        return self.loader_xy.batch_size
 
     @property
     def batch_ind(self):
@@ -426,7 +429,7 @@ class InitKernelType(str, Enum):
 
     """
     IMPULSE = 'impulse'
-    GAUSSIAN = 'guassian'
+    GAUSSIAN = 'gaussian'
     RECT = 'rect'
     NONE = 'none'
 
@@ -445,8 +448,11 @@ def create_init_kernel(init_kernel_type, kernel_length, scale_factor=None):
     if init_kernel_type is InitKernelType.IMPULSE:
         kernel = torch.zeros([1, 1, kernel_length, 1], dtype=torch.float32)
         kernel[:, :, kernel_length//2, ...] = 1
-    else:
-        raise NotImplementedError
+    elif init_kernel_type is InitKernelType.GAUSSIAN:
+        kernel = gaussian(kernel_length, scale_factor / 2.355, sym=True)
+        kernel = torch.tensor(kernel).float()[None, None, :, None]
+        kernel = kernel / torch.sum(kernel)
+        print(kernel.squeeze())
     return kernel
 
 
@@ -454,7 +460,7 @@ class TrainerKernelInit(Trainer):
     """Initializes the kernel using simulated HR and LR pairs.
 
     """
-    def __init__(self, kernel_net, init_optim, dataloader, init_type='impulse'):
+    def __init__(self, kernel_net, init_optim, dataloader, init_type='gaussian'):
         super().__init__(Config().num_init_epochs)
         self.kernel_net = kernel_net
         self.init_optim = init_optim
@@ -468,7 +474,7 @@ class TrainerKernelInit(Trainer):
 
     def _create_init_kernel(self):
         """Creates the kernel to initialize to."""
-        kernel = create_init_kernel(self.init_type, Config().kernel_length)
+        kernel = create_init_kernel(self.init_type, Config().kernel_length, 1.5)
         return kernel.cuda()
 
     def train(self):
@@ -490,6 +496,7 @@ class TrainerKernelInit(Trainer):
         self._ref_blur = F.conv2d(self._patch, self._ref_kernel)
         self.init_loss = self._loss_func(self._blur, self._ref_blur)
         self.init_loss.backward()
+        torch.nn.utils.clip_grad_value_(self.kernel_net.parameters(), 1)
         self.init_optim.step()
         self.kernel_net.update_kernel()
 
