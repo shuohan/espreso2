@@ -298,3 +298,8 @@ if config.num_init_epochs > 0:
     init_trainer.train()
 
 trainer.train()
+
+result_npy = Path('kernel', 'avg_epoch-%d.npy' % args.num_epochs)
+result_png = Path('kernel', 'avg_epoch-%d.png' % args.num_epochs)
+args.output.joinpath('result.npy').symlink_to(result_npy)
+args.output.joinpath('result.png').symlink_to(result_png)

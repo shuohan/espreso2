@@ -73,7 +73,7 @@ class KernelSaver(ThreadedSaver):
         assert isinstance(subject, Trainer)
 
     def update_on_epoch_end(self):
-        if self.subject.epoch_ind % self.step == 0:
+        if self._need_to_save():
             self._save()
 
     def _save(self):
