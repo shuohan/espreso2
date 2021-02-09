@@ -196,9 +196,9 @@ if args.debug:
     print(patches_z)
 
 trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, loader_xy, loader_z)
-queue = DataQueue(['kn_gan_loss', 'smoothness_loss', 'center_loss',
-                   'boundary_loss', 'kn_tot_loss', 'lrd_gan_loss'],
-                  ['g_gan', 'smooth', 'center', 'bound', 'g_tot', 'desc_gan'])
+queue = DataQueue(['lrd_gan_loss', 'kn_gan_loss', 'smoothness_loss',
+                   'center_loss', 'boundary_loss', 'kn_tot_loss'],
+                  ['d_gan', 'g_gan', 'smooth', 'center', 'bound', 'g_tot'])
 if args.debug:
     printer = EpochPrinter(decimals=2, print_sep=False)
 else:
