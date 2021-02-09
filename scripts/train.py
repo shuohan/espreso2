@@ -5,13 +5,13 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', help='Input image.')
 parser.add_argument('-o', '--output', help='Output directory.')
-parser.add_argument('-bs', '--batch-size', default=32, type=int,
+parser.add_argument('-bs', '--batch-size', default=64, type=int,
                     help='The number of samples per mini-batch.')
 parser.add_argument('-s', '--scale-factor', default=None, type=float,
                     help='Super resolution scale factor.')
-parser.add_argument('-e', '--num-epochs', default=10000, type=int,
+parser.add_argument('-e', '--num-epochs', default=15000, type=int,
                     help='The number of epochs (iterations).')
-parser.add_argument('-iss', '--image-save-step', default=100, type=int,
+parser.add_argument('-iss', '--image-save-step', default=5000, type=int,
                     help='The image saving step.')
 parser.add_argument('-k', '--true-kernel', default=None)
 parser.add_argument('-kl', '--kernel-length', default=21, type=int)
@@ -22,22 +22,22 @@ parser.add_argument('-w', '--num-workers', default=0, type=int)
 parser.add_argument('-sw', '--smoothness-loss-weight', default=1.0, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-isz', '--image-save-zoom', default=1, type=int)
-parser.add_argument('-wd', '--weight-decay', default=0, type=float)
+parser.add_argument('-wd', '--weight-decay', default=5e-2, type=float)
 parser.add_argument('-lrdk', '--lrd-kernels', nargs='+', type=str,
-                    default=((3, 1), (3, 1), (3, 1), (3, 1), (3, 1)),
+                    default=((3, 1), (3, 1), (3, 1), (1, 1), (1, 1)),
                     help='Comma separated: 3,1 3,1 1,1.')
-parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 128, 256, 512),
+parser.add_argument('-lrdc', '--lrd-num-channels', default=(64, 64, 64, 64),
                     nargs='+', type=int)
-parser.add_argument('-knc', '--kn-num-convs', default=6, type=int)
-parser.add_argument('-knh', '--kn-num-channels', default=1024, type=int)
+parser.add_argument('-knc', '--kn-num-convs', default=3, type=int)
+parser.add_argument('-knh', '--kn-num-channels', default=256, type=int)
 parser.add_argument('-knk', '--kn-kernel-size', default=3, type=int)
-parser.add_argument('-ns', '--num-epochs-per-stage', default=1000, type=int)
-parser.add_argument('-ps', '--patch-size', default=7, type=int)
-parser.add_argument('-ie', '--num-init-epochs', default=0, type=int,
+parser.add_argument('-ns', '--num-epochs-per-stage', default=1, type=int)
+parser.add_argument('-ps', '--patch-size', default=16, type=int)
+parser.add_argument('-ie', '--num-init-epochs', default=100, type=int,
                     help='The number of init epochs (iterations).')
 parser.add_argument('-zp', '--zero-pad-kn', action='store_true')
 parser.add_argument('-in', '--intensity', default=1000.0, type=float)
-parser.add_argument('-css', '--checkpoint-save-step', default=5000, type=int)
+parser.add_argument('-css', '--checkpoint-save-step', default=15000, type=int)
 parser.add_argument('-c', '--checkpoint', default=None)
 args = parser.parse_args()
 
