@@ -111,16 +111,17 @@ kn_optim = Adam(kn.parameters(), lr=config.learning_rate, betas=(0.5, 0.999),
                 weight_decay=config.weight_decay)
 lrd_optim = Adam(lrd.parameters(), lr=config.learning_rate, betas=(0.5, 0.999))
 
-x = torch.rand((1, 1, 64, 64)).float().cuda()
-kn_dot = make_dot(x, kn)
-kn_dot.render(arch_output.joinpath('kn'))
-lrd_dot = make_dot(x, lrd)
-lrd_dot.render(arch_output.joinpath('lrd'))
+if args.debug:
+    x = torch.rand((1, 1, 64, 64)).float().cuda()
+    kn_dot = make_dot(x, kn)
+    kn_dot.render(arch_output.joinpath('kn'))
+    lrd_dot = make_dot(x, lrd)
+    lrd_dot.render(arch_output.joinpath('lrd'))
 
-with open(arch_output.joinpath('lrd.txt'), 'w') as f:
-    f.write(lrd.__str__())
-with open(arch_output.joinpath('kn.txt'), 'w') as f:
-    f.write(kn.__str__())
+    with open(arch_output.joinpath('lrd.txt'), 'w') as f:
+        f.write(lrd.__str__())
+    with open(arch_output.joinpath('kn.txt'), 'w') as f:
+        f.write(kn.__str__())
 
 nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
@@ -138,10 +139,16 @@ if args.debug:
 # transforms = [] if args.no_aug else create_rot_flip()
 transforms = [Identity(), Flip((0, )), Flip((2, )), Flip((0, 2))]
 
-sample_weight_xz_gx_output = args.output.joinpath('sample_weights_xz_gx')
-sample_weight_xz_gz_output = args.output.joinpath('sample_weights_xz_gz')
-sample_weight_yz_gy_output = args.output.joinpath('sample_weights_yz_gy')
-sample_weight_yz_gz_output = args.output.joinpath('sample_weights_yz_gz')
+if args.debug:
+    sample_weight_xz_gx_output = args.output.joinpath('sample_weights_xz_gx')
+    sample_weight_xz_gz_output = args.output.joinpath('sample_weights_xz_gz')
+    sample_weight_yz_gy_output = args.output.joinpath('sample_weights_yz_gy')
+    sample_weight_yz_gz_output = args.output.joinpath('sample_weights_yz_gz')
+else:
+    sample_weight_xz_gx_output = None
+    sample_weight_xz_gz_output = None
+    sample_weight_yz_gy_output = None
+    sample_weight_yz_gz_output = None
 
 voxel_size = [zooms[xy[0]], zooms[xy[1]], zooms[args.z_axis]]
 patch_size_xz = config.patch_size

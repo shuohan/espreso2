@@ -41,7 +41,7 @@ for image in ${images[@]}; do
     len=$(echo $image | sed "s/.*\(len-.*\)\.nii/\1/")
     outdir=../tests/results/oasis3_${fwhm}_${scale}_${len}_ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}_in-${in}_bs-${bs}
     kernel=$(echo $image | sed "s/\.nii/_kernel.npy/")
-    docker run --gpus device=1 --rm \
+    echo docker run --gpus device=1 --rm \
         -v $data_dir:$data_dir \
         -v $psf_est_dir:$psf_est_dir \
         -v $sssrlib_dir:$sssrlib_dir \
