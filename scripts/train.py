@@ -39,6 +39,7 @@ parser.add_argument('-zp', '--zero-pad-kn', action='store_true')
 parser.add_argument('-in', '--intensity', default=1000.0, type=float)
 parser.add_argument('-css', '--checkpoint-save-step', default=15000, type=int)
 parser.add_argument('-c', '--checkpoint', default=None)
+parser.add_argument('-d', '--debug', action='store_true')
 args = parser.parse_args()
 
 
@@ -60,7 +61,7 @@ from espreso2.train import TrainerKernelInit
 from espreso2.networks import KernelNet, LowResDiscriminator, KernelNetZP
 from espreso2.utils import calc_patch_size
 
-from ptxl.log import DataQueue, TqdmEpochPrinter, EpochLogger
+from ptxl.log import DataQueue, TqdmEpochPrinter, EpochLogger, EpochPrinter
 from ptxl.save import ImageSaver, CheckpointSaver
 
 
@@ -100,7 +101,9 @@ config.input_image = os.path.abspath(str(args.input))
 config.output_dirname = os.path.abspath(str(args.output))
 
 image = image / image.max() * config.intensity
-# print('Image intensity range [{}, {}]'.format(image.min(), image.max()))
+
+if args.debug:
+    print('Image intensity range [{}, {}]'.format(image.min(), image.max()))
 
 kn = KernelNet().cuda() if not config.zero_pad_kn else KernelNetZP().cuda()
 lrd = LowResDiscriminator().cuda()
@@ -123,13 +126,14 @@ nz = image.shape[args.z_axis]
 config.patch_size = calc_patch_size(config.patch_size, config.scale_factor, nz,
                                     kn.input_size_reduced)
 config.weight_stride = (2, 2, 1)
-# print(config)
 config.save_json(config_output)
 
-# print(kn)
-# print(lrd)
-# print(kn_optim)
-# print(lrd_optim)
+if args.debug:
+    print(config)
+    print(kn)
+    print(lrd)
+    print(kn_optim)
+    print(lrd_optim)
 
 # transforms = [] if args.no_aug else create_rot_flip()
 transforms = [Identity(), Flip((0, )), Flip((2, )), Flip((0, 2))]
@@ -174,19 +178,24 @@ patches_z = PatchesOr(patches_xz_gz, patches_yz_gz)
 loader_xy = patches_xy.get_dataloader(config.batch_size, num_workers=args.num_workers)
 loader_z = patches_z.get_dataloader(config.batch_size, num_workers=args.num_workers)
 
-# print('Patches XY')
-# print('----------')
-# print(patches_xy)
-# 
-# print('Patches Z')
-# print('----------')
-# print(patches_z)
+if args.debug:
+    print('Patches XY')
+    print('----------')
+    print(patches_xy)
+
+    print('Patches Z')
+    print('----------')
+    print(patches_z)
 
 trainer = TrainerHRtoLR(kn, lrd, kn_optim, lrd_optim, loader_xy, loader_z)
 queue = DataQueue(['kn_gan_loss', 'smoothness_loss', 'center_loss',
                    'boundary_loss', 'kn_tot_loss', 'lrd_gan_loss'],
                   ['g_gan', 'smooth', 'center', 'bound', 'g_tot', 'desc_gan'])
-printer = TqdmEpochPrinter(decimals=2)
+if args.debug:
+    printer = EpochPrinter(decimals=2, print_sep=False)
+else:
+    printer = TqdmEpochPrinter(decimals=2)
+
 logger = EpochLogger(log_output)
 
 true_kernel = None
@@ -254,7 +263,12 @@ if config.num_init_epochs > 0:
     init_log_output = args.output.joinpath('init_loss.csv')
 
     init_queue = DataQueue(['init_loss'])
-    init_printer = TqdmEpochPrinter(decimals=2)
+
+    if args.debug:
+        init_printer = EpochPrinter(decimals=2, print_sep=False)
+    else:
+        init_printer = TqdmEpochPrinter(decimals=2)
+
     init_logger = EpochLogger(init_log_output)
     init_queue.register(init_printer)
     init_queue.register(init_logger)

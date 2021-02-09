@@ -52,7 +52,7 @@ for image in ${images[@]}; do
         -e PYTHONPATH=$psf_est_dir:$sssrlib_dir:$proc_dir:$trainer_dir:$config_dir \
         -w $psf_est_dir/scripts -t \
         pytorch-shan:1.7.0-cuda11.0-cudnn8-runtime \
-        ./train.py -i $image -o $outdir -k $kernel -kl 13 -isz 1 -e ${ne} \
+        ./train.py -d -i $image -o $outdir -k $kernel -kl 13 -isz 1 -e ${ne} \
         -sw ${sw} -wd ${sw} -lrdk 3,1 3,1 3,1 1,1 1,1 \
         -lrdc 64 64 64 64 -knc 3 -ns ${ns} -ps 40 -ie ${ie} \
         -wd ${wd} -in ${in} -bs ${bs} -css 5000  # -c $outdir/checkpoint/epoch-10.pt
