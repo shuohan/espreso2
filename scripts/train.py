@@ -90,8 +90,9 @@ if args.scale_factor is None:
 if args.scale_factor < 1:
     raise RuntimeError('Scale factor should be greater or equal to 1.')
 
-args.lrd_kernels = tuple(tuple(int(n) for n in lk.split(','))
-                         for lk in args.lrd_kernels)
+if type(args.lrd_kernels[0]) is str:
+    args.lrd_kernels = tuple(tuple(int(n) for n in lk.split(','))
+                             for lk in args.lrd_kernels)
 
 config = Config()
 for key, value in args.__dict__.items():
