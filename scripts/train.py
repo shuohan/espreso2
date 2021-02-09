@@ -270,30 +270,27 @@ if config.num_init_epochs > 0:
     init_kernel_output = args.output.joinpath('init_kernel')
     init_log_output = args.output.joinpath('init_loss.csv')
 
-    init_queue = DataQueue(['init_loss'])
 
     if args.debug:
+        init_queue = DataQueue(['init_loss'])
         init_printer = EpochPrinter(decimals=2, print_sep=False)
-    else:
-        init_printer = TqdmEpochPrinter(decimals=2)
+        init_logger = EpochLogger(init_log_output)
+        init_queue.register(init_printer)
+        init_queue.register(init_logger)
 
-    init_logger = EpochLogger(init_log_output)
-    init_queue.register(init_printer)
-    init_queue.register(init_logger)
+        init_kernel_saver = KernelSaver(init_kernel_output,
+                                        step=config.image_save_step,
+                                        save_init=True, truth=true_kernel)
+        init_im_saver = ImageSaver(init_im_output,
+                                   attrs=['patch', 'blur', 'ref_blur'],
+                                   step=config.image_save_step,
+                                   file_struct='epoch/sample', save_type='png_norm',
+                                   save_init=False, prefix='patch',
+                                   zoom=config.image_save_zoom, ordered=True)
 
-    init_kernel_saver = KernelSaver(init_kernel_output,
-                                    step=config.image_save_step,
-                                    save_init=True, truth=true_kernel)
-    init_im_saver = ImageSaver(init_im_output,
-                               attrs=['patch', 'blur', 'ref_blur'],
-                               step=config.image_save_step,
-                               file_struct='epoch/sample', save_type='png_norm',
-                               save_init=False, prefix='patch',
-                               zoom=config.image_save_zoom, ordered=True)
-
-    init_trainer.register(init_queue)
-    init_trainer.register(init_im_saver)
-    init_trainer.register(init_kernel_saver)
+        init_trainer.register(init_queue)
+        init_trainer.register(init_im_saver)
+        init_trainer.register(init_kernel_saver)
 
     init_trainer.train()
 
