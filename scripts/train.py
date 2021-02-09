@@ -54,14 +54,14 @@ from pytorchviz import make_dot
 
 from sssrlib.patches import Patches, PatchesOr
 from sssrlib.transform import Identity, Flip
-from spest.config import Config
-from spest.train import TrainerHRtoLR, KernelSaver, KernelEvaluator
-from spest.train import TrainerKernelInit
-from spest.networks import KernelNet, LowResDiscriminator, KernelNetZP
-from spest.utils import calc_patch_size
+from espreso2.config import Config
+from espreso2.train import TrainerHRtoLR, KernelSaver, KernelEvaluator
+from espreso2.train import TrainerKernelInit
+from espreso2.networks import KernelNet, LowResDiscriminator, KernelNetZP
+from espreso2.utils import calc_patch_size
 
-from pytorch_trainer.log import DataQueue, EpochPrinter, EpochLogger
-from pytorch_trainer.save import ImageSaver, CheckpointSaver
+from ptxl.log import DataQueue, EpochPrinter, EpochLogger
+from ptxl.save import ImageSaver, CheckpointSaver
 
 
 warnings.filterwarnings('ignore')

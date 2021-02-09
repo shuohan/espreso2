@@ -7,8 +7,8 @@ from pytorchviz import make_dot
 from PIL import Image
 import matplotlib.pyplot as plt
 
-from spest.networks import KernelNet, LowResDiscriminator, KernelNetZP
-from spest.config import Config
+from espreso2.networks import KernelNet, LowResDiscriminator, KernelNetZP
+from espreso2.config import Config
 
 
 def test_networks():
