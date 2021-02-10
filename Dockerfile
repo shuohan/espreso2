@@ -9,6 +9,7 @@ RUN pip install scipy==1.5.4 \
         git+https://github.com/shuohan/singleton-config@0.2.0 \
         git+https://github.com/shuohan/pytorchviz@0.0.2 \
         git+https://github.com/shuohan/ptxl@0.2.0
+COPY . /tmp/
+RUN pip install /tmp && rm -rf /tmp/*
 ENV MPLCONFIGDIR=/tmp/matplotlib
-ENTRYPOINT train.py
 CMD ["bash"]
