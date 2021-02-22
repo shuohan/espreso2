@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.7.0-cuda11.0-cudnn8-runtime
+FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 RUN apt-get update && apt-get install -y git graphviz 
 RUN pip install scipy==1.5.4 \
         nibabel==3.2.0 \
