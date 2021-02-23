@@ -38,7 +38,7 @@ docker load -i espreso2_010.tar
 The [Singularity image][singularity-image] was built from the [Docker image][docker-image] with Singularity 3.7:
 
 ```bash
-sudo singularity build espreso2_010.sif docker-archive://espreso2_010.tar.gz
+sudo singularity build espreso2_011.sif docker-archive://espreso2_011.tar.gz
 ```
 
 You might need to rebuilt the Singularity image to use it in a lower version of Singularity. See [this link](https://sylabs.io/guides/3.7/user-guide/singularity_and_docker.html#locally-available-images-stored-archives) for more details of building a Singularity image from a Docker `.tar` file.
@@ -57,20 +57,20 @@ To use the Docker image, run
 image=/path/to/image
 output_dir=/path/to/output_dir
 docker run -v $image:$image -v $output_dir:$output_dir --user $(id -u):$(id -g) \
-    --rm --gpus device=0 -t espreso2:0.1.0 train.py -i $image -o $output_dir
+    --rm --gpus device=0 -t espreso2:0.1.1 train.py -i $image -o $output_dir
 ```
 
 The estimated slice profiles are stored as `$output_dir/result.npy` and `$output_dir/result.png`. To measure the FWHM of the estimated slice profile:
 
 ```bash
 docker run -v $image:$image -v $output_dir:$output_dir --user $(id -u):$(id -g) \
-    --rm --gpus device=0 -t espreso2:0.1.0 calc_fwhm.py $output_dir/result.npy
+    --rm --gpus device=0 -t espreso2:0.1.1 calc_fwhm.py $output_dir/result.npy
 ```
 
 To use the Singularity image, run
 ```bash
 singularity run -B $image:$image -B $output_dir:$output_dir --nv \
-    espreso2_010.sif train.py -i $image -o $output_dir
+    espreso2_011.sif train.py -i $image -o $output_dir
 ```
 
 If `espreso2` is installed in the host machine, run
@@ -79,5 +79,5 @@ If `espreso2` is installed in the host machine, run
 train.py -i $image -o $output_dir
 ```
 
-[docker-image]: http://iacl.jhu.edu/~shuo/data/espreso2_010.tar.gz
-[singularity-image]: http://iacl.jhu.edu/~shuo/data/espreso2_010.sif
+[docker-image]: http://iacl.jhu.edu/~shuo/data/espreso2_011.tar.gz
+[singularity-image]: http://iacl.jhu.edu/~shuo/data/espreso2_011.sif
