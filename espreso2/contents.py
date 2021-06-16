@@ -88,12 +88,14 @@ class ContentsBuilder:
 
 
 class TrainContentsBuilder(ContentsBuilder):
-    def __init__(self, sp_net, disc, sp_optim, disc_optim, args):
+    def __init__(self, sp_net, disc, sp_optim, disc_optim, sp_sch, disc_sch, args):
         super().__init__(args)
         self.sp_net = sp_net
         self.disc = disc
         self.sp_optim = sp_optim
         self.disc_optim = disc_optim
+        self.sp_sch = sp_sch
+        self.disc_sch = disc_sch
         self.args = args
 
     def _get_name(self):
@@ -104,7 +106,8 @@ class TrainContentsBuilder(ContentsBuilder):
 
     def _create_contents(self):
         self._contents = TrainContents(self.sp_net, self.disc, self.sp_optim,
-                                       self.disc_optim, self._counter)
+                                       self.disc_optim, self.sp_sch,
+                                       self.disc_sch, self._counter)
 
     def _get_log_filename(self):
         return self.args.log_filename
@@ -119,7 +122,8 @@ class TrainContentsBuilder(ContentsBuilder):
 class TrainContentsBuilderDebug(TrainContentsBuilder):
     def _create_contents(self):
          cnt = TrainContentsDebug(self.sp_net, self.disc, self.sp_optim,
-                                  self.disc_optim, self._counter)
+                                  self.disc_optim, self.sp_sch, self.disc_sch,
+                                  self._counter)
          self._contents = cnt
 
     def _set_observers(self):
@@ -189,11 +193,14 @@ class TrainContents(Contents):
     value_attrs = ['sp_adv_loss', 'sp_center_loss', 'sp_boundary_loss',
                    'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
 
-    def __init__(self, sp_net, disc, sp_optim, disc_optim, counter):
+    def __init__(self, sp_net, disc, sp_optim, disc_optim, sp_sch, disc_sch,
+                 counter):
         self.sp_net = sp_net
         self.disc = disc
         self.sp_optim = sp_optim
         self.disc_optim = disc_optim
+        self.sp_sch = sp_sch
+        self.disc_sch = disc_sch
         self.counter = counter
 
         self._values = dict()
@@ -212,13 +219,17 @@ class TrainContents(Contents):
 
     def get_optim_state_dict(self):
         return {'sp_optim': self.sp_optim.state_dict(),
-                'disc_optim': self.disc_optim.state_dict()}
+                'disc_optim': self.disc_optim.state_dict(),
+                'sp_sch': self.sp_sch.state_dict(),
+                'disc_sch': self.disc_sch.state_dict()}
 
     def load_state_dict(self, checkpoint):
         self.sp_net.load_state_dict(checkpoint['model_state_dict']['sp_net'])
         self.sp_optim.load_state_dict(checkpoint['optim_state_dict']['sp_optim'])
         self.disc.load_state_dict(checkpoint['model_state_dict']['disc'])
-        self.disc_optim.load_state_dict(checkpoint['optim_state_dict']['dict_optim'])
+        self.disc_optim.load_state_dict(checkpoint['optim_state_dict']['disc_optim'])
+        self.sp_sch.load_state_dict(checkpoint['optim_state_dict']['sp_sch'])
+        self.disc_sch.load_state_dict(checkpoint['optim_state_dict']['disc_sch'])
 
 
 class TrainContentsDebug(TrainContents):

@@ -13,7 +13,7 @@ parser.add_argument('-s', '--image-save-step', default=5000, type=int,
                     help='The image saving step.')
 parser.add_argument('-p', '--true-slice-profile', default=None)
 parser.add_argument('-L', '--slice-profile-length', default=21, type=int)
-parser.add_argument('-l', '--learning-rate', default=2e-4, type=float)
+parser.add_argument('-l', '--learning-rate', default=2e-3, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-Z', '--image-save-zoom', default=1, type=int)
 parser.add_argument('-d', '--sp-weight-decay', default=5e-2, type=float)
@@ -48,6 +48,8 @@ parser.add_argument('-E', '--weight-kernel-size', default=(4, 4, 1),
                     type=float, nargs='+')
 parser.add_argument('-R', '--weight-stride', default=(2, 2, 1),
                     type=float, nargs='+')
+parser.add_argument('-S', '--lr-scheduler-step', default=5000, type=int)
+parser.add_argument('-G', '--lr-scheduler-gamma', default=0.2, type=float)
 
 args = parser.parse_args()
 
