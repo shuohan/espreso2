@@ -143,6 +143,8 @@ class TrainerBuilder:
             right_pad = self.args.slice_profile_length - len(sp) - left_pad
             sp = np.pad(sp, (left_pad, right_pad))
             self.args.true_slice_profile_values = sp.tolist()
+        else:
+            self.args.true_slice_profile_values = None
 
     def _create_warmup_contents(self):
         builder = WarmupContentsBuilder(self._sp_net, self._sp_optim, self.args)
