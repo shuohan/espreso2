@@ -43,11 +43,17 @@ parser.add_argument('-t', '--boundary-loss-weight', default=10, type=float)
 parser.add_argument('-T', '--center-loss-weight', default=1, type=float)
 parser.add_argument('-r', '--printer-mode', default='tqdm',
                     choices={'text', 'tqdm'})
+parser.add_argument('-E', '--weight-kernel-size', default=(4, 4, 1),
+                    type=float, nargs='+')
+parser.add_argument('-R', '--weight-stride', default=(2, 2, 1),
+                    type=float, nargs='+')
 
 args = parser.parse_args()
 
 
 import warnings
+from pathlib import Path
+
 from espreso2.train import TrainerBuilder
 
 

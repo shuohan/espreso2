@@ -14,8 +14,7 @@ from scipy.signal import gaussian
 from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
 from .contents import WarmupContentsBuilder
-from .sample import SamplerBuilderUniform, SamplerType
-from .sample import SamplerBuilderGrad, SamplerBuilderGrad, SamplerBuilderFG
+from .sample import SamplerBuilderUniform, SamplerBuilderGrad, SamplerBuilderFG
 from .networks import SliceProfileNet, Discriminator
 
 
@@ -160,42 +159,28 @@ class TrainerBuilder:
         self._train_contents = builder.build().contents
 
     def _create_samplers(self):
-        stype = SamplerType(self.args.sampler_mode)
-        if stype is SamplerType.UNIFORM:
-            builder = SamplerBuilderUniform(self.args.patch_size, self._image,
-                                            self.args.x_axis, self.args.y_axis,
-                                            self.args.z_axis,
-                                            self.args.voxel_size)
-            builder.build()
-            self._xy_sampler = builder.sampler
-            self._z_sampler = builder.sampler
-        elif stype is SamplerType.GRADIENT:
-            builder = SamplerBuilderGrad(self.args.patch_size, self._image,
-                                         self.args.x_axis, self.args.y_axis,
-                                         self.args.z_axis, self.args.voxel_size,
-                                         (4, 4, 1), (2, 2, 1))
-            builder.build()
-            self._xy_sampler = builder.sampler_xy
-            self._z_sampler = builder.sampler_z
-
-        elif stype is SamplerType.FOREGROUND:
-            builder = SamplerBuilderFG(self.args.patch_size, self._image,
-                                       self.args.x_axis, self.args.y_axis,
-                                       self.args.z_axis, self.args.voxel_size)
-            builder.build()
-            self._xy_sampler = builder.sampler
-            self._z_sampler = builder.sampler
+        if self.args.sampler_mode == 'uniform':
+            B = SamplerBuilderUniform
+        elif self.args.sampler_mode == 'gradient':
+            B = SamplerBuilderGrad
+        elif self.args.sampler_mode == 'foreground':
+            B = SamplerBuilderFG
+        b = B(self.args.patch_size, self._image, self.args.x_axis,
+              self.args.y_axis, self.args.z_axis, self.args.voxel_size,
+              self.args.weight_kernel_size, self.args.weight_stride).build()
+        self._sampler_xy = b.sampler_xy
+        self._sampler_z = b.sampler_z
 
     def _create_trainer(self):
-        self._trainer = Trainer(self._train_contents, self._xy_sampler,
-                                self._z_sampler, self.args.scale_factor,
+        self._trainer = Trainer(self._train_contents, self._sampler_xy,
+                                self._sampler_z, self.args.scale_factor,
                                 self.args.batch_size,
                                 self.args.boundary_loss_weight,
                                 self.args.center_loss_weight)
 
     def _create_warmup(self):
         ref_sp = create_warmup_sp('impulse', self.args.slice_profile_length)
-        self._warmup = Warmup(self._warmup_contents, self._xy_sampler,
+        self._warmup = Warmup(self._warmup_contents, self._sampler_xy,
                               ref_sp.cuda(), self.args.batch_size)
 
     def _save_args(self):
@@ -240,11 +225,11 @@ class _Trainer:
 
 
 class Trainer(_Trainer):
-    def __init__(self, contents, xy_sampler, z_sampler, scale_factor,
+    def __init__(self, contents, sampler_xy, sampler_z, scale_factor,
                  batch_size, boundary_loss_weight, center_loss_weight):
         self.contents = contents
-        self.xy_sampler = xy_sampler
-        self.z_sampler = z_sampler
+        self.sampler_xy = sampler_xy
+        self.sampler_z = sampler_z
         self.scale_factor = scale_factor
         self.batch_size = batch_size
         self.boundary_loss_weight = boundary_loss_weight
@@ -262,15 +247,15 @@ class Trainer(_Trainer):
         self._train_sp_net()
 
     def _sample_patch_indices(self):
-        self._sp_xy_indices = self._sample_patch_indices_from(self.xy_sampler)
-        self._sp_z_indices = self._sample_patch_indices_from(self.z_sampler)
-        self._disc_xy_indices = self._sample_patch_indices_from(self.xy_sampler)
-        self._disc_z_indices = self._sample_patch_indices_from(self.z_sampler)
+        self._sp_xy_indices = self._sample_patch_indices_from(self.sampler_xy)
+        self._sp_z_indices = self._sample_patch_indices_from(self.sampler_z)
+        self._disc_xy_indices = self._sample_patch_indices_from(self.sampler_xy)
+        self._disc_z_indices = self._sample_patch_indices_from(self.sampler_z)
 
     def _train_disc(self):
         self.contents.disc_optim.zero_grad()
-        disc_fake = self._sample_patches(self._disc_xy_indices, self.xy_sampler)
-        disc_real = self._sample_patches(self._disc_z_indices, self.z_sampler)
+        disc_fake = self._sample_patches(self._disc_xy_indices, self.sampler_xy)
+        disc_real = self._sample_patches(self._disc_z_indices, self.sampler_z)
 
         with torch.no_grad():
             disc_fake_blur = self.contents.sp_net(disc_fake.data)
@@ -300,8 +285,8 @@ class Trainer(_Trainer):
 
     def _train_sp_net(self):
         self.contents.sp_optim.zero_grad()
-        sp_in = self._sample_patches(self._sp_xy_indices, self.xy_sampler)
-        sp_t_in = self._sample_patches(self._sp_z_indices, self.z_sampler)
+        sp_in = self._sample_patches(self._sp_xy_indices, self.sampler_xy)
+        sp_t_in = self._sample_patches(self._sp_z_indices, self.sampler_z)
 
         sp_blur = self.contents.sp_net(sp_in.data)
         sp_down = self._downsample(sp_blur)
