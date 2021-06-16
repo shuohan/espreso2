@@ -4,12 +4,13 @@ from sssrlib.patches import Patches, TransformedPatches
 from sssrlib.transform import Flip
 from sssrlib.sample import SuppressWeights, SampleWeights, Aggregate
 from sssrlib.sample import Sampler, SamplerCollection, ImageGradients
-from sssrlib.utils import calc_avg_kernel
+from sssrlib.utils import calc_avg_kernel, calc_foreground_mask
 
 
 class SamplerType(str, Enum):
     UNIFORM = 'uniform'
     GRADIENT = 'gradient'
+    FOREGROUND = 'foreground'
 
 
 class SamplerBuilder:
@@ -99,5 +100,27 @@ class SamplerBuilderGrad(SamplerBuilderUniform):
 
         self._sampler_xy = SamplerCollection(*samplers_xy)
         self._sampler_z = SamplerCollection(*samplers_xy)
+
+        return self
+
+
+class SamplerBuilderFG(SamplerBuilderUniform):
+
+    def build(self):
+        samplers = list()
+        agg_kernel = calc_avg_kernel(self.patch_size)
+        for orient in ['xz', 'yz']:
+            patches = self._build_patches(orient)
+            fg_mask = calc_foreground_mask(patches.image)
+            agg = Aggregate(agg_kernel, (fg_mask, ))
+            weights = SampleWeights(patches, agg.agg_images)
+            weights = SuppressWeights(weights, kernel_size=self.patch_size,
+                                      stride=self.patch_size)
+
+            trans_patches = self._build_trans_patches(patches)
+            for p in [patches] + trans_patches:
+                sampler = Sampler(p, weights.weights_flat, weights.weights_mapping)
+                samplers.append(sampler)
+        self._sampler = SamplerCollection(*samplers)
 
         return self

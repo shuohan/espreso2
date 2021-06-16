@@ -15,7 +15,7 @@ from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
 from .contents import WarmupContentsBuilder
 from .sample import SamplerBuilderUniform, SamplerType
-from .sample import SamplerBuilderGrad, SamplerBuilderGrad
+from .sample import SamplerBuilderGrad, SamplerBuilderGrad, SamplerBuilderFG
 from .networks import SliceProfileNet, Discriminator
 
 
@@ -175,6 +175,14 @@ class TrainerBuilder:
             builder.build()
             self._xy_sampler = builder.sampler_xy
             self._z_sampler = builder.sampler_z
+
+        elif stype is SamplerType.FOREGROUND:
+            builder = SamplerBuilderFG(self.args.patch_size, self._image,
+                                       self.args.x_axis, self.args.y_axis,
+                                       self.args.z_axis, self.args.voxel_size)
+            builder.build()
+            self._xy_sampler = builder.sampler
+            self._z_sampler = builder.sampler
 
     def _create_trainer(self):
         self._trainer = Trainer(self._train_contents, self._xy_sampler,
