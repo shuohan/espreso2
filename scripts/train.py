@@ -63,7 +63,8 @@ builder.build()
 builder.warmup.train()
 builder.trainer.train()
 
-result_npy = Path('slice_profiles', 'avg_epoch-%d.npy' % args.num_epochs)
-result_png = Path('slice_profiles', 'avg_epoch-%d.png' % args.num_epochs)
+filename = 'iter-%d_sample-1_2_avg-slice-profile' % args.num_iters
+result_npy = Path('slice_profiles', filename + '.npy')
+result_png = Path('slice_profiles', filename + '.png')
 Path(args.output_dirname).joinpath('result.npy').symlink_to(result_npy)
 Path(args.output_dirname).joinpath('result.png').symlink_to(result_png)

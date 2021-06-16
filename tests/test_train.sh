@@ -14,7 +14,7 @@ images=(/data/smore_simu_same_fov/simu_data/scale-2p0_fwhm-1p0/sub-OAS30004_ses-
 # images=(/data/smore_simu_same_fov/orig_data/sub-OAS30004_ses-d1101_T2w_initnorm.nii.gz)
 # images=(/data/smore_simu_same_fov/simu_data/scale-4p9_fwhm-6p125/sub-OAS30004_ses-d1101_T2w_initnorm_scale-4p9_fwhm-6p125.nii.gz)
 
-ni=15000
+ni=10
 sw=1
 ie=100
 wd=5e-2
