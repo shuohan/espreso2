@@ -176,7 +176,8 @@ class TrainerBuilder:
                                 self._sampler_z, self.args.scale_factor,
                                 self.args.batch_size,
                                 self.args.boundary_loss_weight,
-                                self.args.center_loss_weight)
+                                self.args.center_loss_weight,
+                                self.args.smooth_loss_weight)
 
     def _create_warmup(self):
         ref_sp = create_warmup_sp('impulse', self.args.slice_profile_length)
@@ -226,7 +227,8 @@ class _Trainer:
 
 class Trainer(_Trainer):
     def __init__(self, contents, sampler_xy, sampler_z, scale_factor,
-                 batch_size, boundary_loss_weight, center_loss_weight):
+                 batch_size, boundary_loss_weight, center_loss_weight,
+                 smooth_loss_weight):
         self.contents = contents
         self.sampler_xy = sampler_xy
         self.sampler_z = sampler_z
@@ -234,6 +236,7 @@ class Trainer(_Trainer):
         self.batch_size = batch_size
         self.boundary_loss_weight = boundary_loss_weight
         self.center_loss_weight = center_loss_weight
+        self.smooth_loss_weight = smooth_loss_weight
         self._init_loss_funcs()
 
     def _init_loss_funcs(self):
@@ -241,6 +244,7 @@ class Trainer(_Trainer):
         sp_length = self.contents.sp_net.sp_length
         self._center_loss_func = CenterLoss(sp_length).cuda()
         self._boundary_loss_func = BoundaryLoss(sp_length).cuda()
+        self._smooth_loss_func = SmoothnessLoss().cuda()
 
     def _train(self):
         self._train_disc()
@@ -340,14 +344,16 @@ class Trainer(_Trainer):
             + self.center_loss_weight * sp_center_loss \
             + self.boundary_loss_weight * sp_boundary_loss
 
+        if self.smooth_loss_weight > 0:
+            sp_smooth_loss = self._smooth_loss_func(sp)
+            sp_total_loss = sp_total_loss \
+                + self.smooth_loss_weight * sp_smooth_loss
+            self.contents.set_value('sp_smooth_loss', sp_smooth_loss.item())
+
         self.contents.set_value('sp_adv_loss', sp_adv_loss.item())
         self.contents.set_value('sp_center_loss', sp_center_loss.item())
         self.contents.set_value('sp_boundary_loss', sp_boundary_loss.item())
         self.contents.set_value('sp_total_loss', sp_total_loss.item())
-
-        # if self.epoch_ind <= Config().smoothness_loss_epochs:
-        #     self.smoothness_loss = self._smoothness_loss_func(kernel)
-        #     loss += Config().smoothness_loss_weight * self.smoothness_loss
 
         return sp_total_loss
 
