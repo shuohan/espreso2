@@ -26,7 +26,7 @@ class Config(Config_):
     def __init__(self):
         super().__init__()
         self.add_config('kn_num_channels', 1024)
-        self.add_config('kn_num_convs', 6)
+        self.add_config('kn_num_convs', 3)
         self.add_config('kn_kernel_size', 3)
         self.add_config('kn_update_step', 1)
         self.add_config('kernel_avg_beta', 0.99)
