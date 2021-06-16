@@ -10,6 +10,7 @@ from torch.optim import Adam
 from pathlib import Path
 from enum import Enum
 from scipy.signal import gaussian
+from torch.optim.lr_scheduler import StepLR
 
 from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
@@ -238,6 +239,11 @@ class Trainer(_Trainer):
         self.center_loss_weight = center_loss_weight
         self.smooth_loss_weight = smooth_loss_weight
         self._init_loss_funcs()
+        self._init_lr_schedulers()
+
+    def _init_lr_schedulers(self):
+        self._sp_sch = StepLR(self.contents.sp_optim, 5000, gamma=0.1)
+        self._disc_sch = StepLR(self.contents.disc_optim, 5000, gamma=0.1)
 
     def _init_loss_funcs(self):
         self._gan_loss_func = GANLoss().cuda()
@@ -249,6 +255,9 @@ class Trainer(_Trainer):
     def _train(self):
         self._train_disc()
         self._train_sp_net()
+        self._sp_sch.step()
+        self._disc_sch.step()
+        self.contents.set_value('lr', self._sp_sch.get_last_lr()[0])
 
     def _sample_patch_indices(self):
         self._sp_xy_indices = self._sample_patch_indices_from(self.sampler_xy)

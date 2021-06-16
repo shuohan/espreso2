@@ -14,10 +14,10 @@ export CUDA_VISIBLE_DEVICES=0
 # images=(/data/smore_simu_same_fov/orig_data/sub-OAS30004_ses-d1101_T2w_initnorm.nii.gz)
 images=(/data/smore_simu_same_fov/simu_data/scale-4p9_fwhm-6p125/sub-OAS30004_ses-d1101_T2w_initnorm_scale-4p9_fwhm-6p125.nii.gz)
 
-ni=15000
+ni=10000
 sw=1
 ie=100
-wd=5e-2
+wd=1e-2
 in=100
 bs=16
 ne=5000
@@ -30,7 +30,7 @@ for image in ${images[@]}; do
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     ../scripts/train.py -i $image -o $outdir -I ${ni} -Z 4 -P 16 \
-        -s 1000 -M foreground -p ${sp} -g -e 100 -r tqdm -O 0.1 -d 0
+        -s 1000 -M foreground -p ${sp} -g -e 100 -r tqdm -l 2e-3
 done
 
 # docker run --gpus device=1 --rm \

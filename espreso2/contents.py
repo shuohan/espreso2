@@ -50,7 +50,7 @@ class ContentsBuilder:
     def _create_printer(self):
         attrs = self.contents.value_attrs
         if self.args.printer_mode == 'tqdm':
-            printer = TqdmPrinter(attrs=attrs, name=self._get_name())
+            printer = TqdmPrinter(decimals=2, attrs=attrs, name=self._get_name())
         elif self.args.printer_mode == 'text':
             printer = Printer(attrs=attrs)
         self.contents.register(printer)
@@ -187,7 +187,7 @@ class TrainContents(Contents):
                 'sp_t_blur', 'sp_t_down', 'sp_t_down_t']
     prob_attrs = ['disc_real_prob', 'disc_fake_prob', 'sp_prob', 'sp_t_prob']
     value_attrs = ['sp_adv_loss', 'sp_center_loss', 'sp_boundary_loss',
-                   'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss']
+                   'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
 
     def __init__(self, sp_net, disc, sp_optim, disc_optim, counter):
         self.sp_net = sp_net
