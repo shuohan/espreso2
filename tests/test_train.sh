@@ -26,7 +26,7 @@ for image in ${images[@]}; do
     outdir=results_train # /ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}_in-${in}_bs-${bs}
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
     ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
-        -s 1000
+        -s 1000 -M gradient
 done
 
 # docker run --gpus device=1 --rm \

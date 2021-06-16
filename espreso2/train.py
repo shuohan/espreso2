@@ -15,7 +15,7 @@ from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
 from .contents import WarmupContentsBuilder
 from .sample import SamplerBuilderUniform, SamplerType
-from .sample import SamplerBuilderXYGrad, SamplerBuilderZGrad
+from .sample import SamplerBuilderGrad, SamplerBuilderGrad
 from .networks import SliceProfileNet, Discriminator
 
 
@@ -44,8 +44,7 @@ class TrainerBuilder:
         self._create_warmup_contents()
         self._create_train_contents()
         self._calc_patch_size()
-        self._create_xy_sampler()
-        self._create_z_sampler()
+        self._create_samplers()
         self._create_warmup()
         self._create_trainer()
         self._save_args()
@@ -158,25 +157,24 @@ class TrainerBuilder:
                           self._disc_optim, self.args)
         self._train_contents = builder.build().contents
 
-    def _create_xy_sampler(self):
+    def _create_samplers(self):
         stype = SamplerType(self.args.sampler_mode)
         if stype is SamplerType.UNIFORM:
-            B = SamplerBuilderUniform
+            builder = SamplerBuilderUniform(self.args.patch_size, self._image,
+                                            self.args.x_axis, self.args.y_axis,
+                                            self.args.z_axis,
+                                            self.args.voxel_size)
+            builder.build()
+            self._xy_sampler = builder.sampler
+            self._z_sampler = builder.sampler
         elif stype is SamplerType.GRADIENT:
-            B = SamplerBuilderXYGrad
-        builder = B(self.args.patch_size, self._image, self.args.x_axis,
-                    self.args.y_axis, self.args.z_axis, self.args.voxel_size)
-        self._xy_sampler = builder.build().sampler
-
-    def _create_z_sampler(self):
-        stype = SamplerType(self.args.sampler_mode)
-        if stype is SamplerType.UNIFORM:
-            B = SamplerBuilderUniform
-        elif stype is SamplerType.GRADIENT:
-            B = SamplerBuilderZGrad
-        builder = B(self.args.patch_size, self._image, self.args.x_axis,
-                    self.args.y_axis, self.args.z_axis, self.args.voxel_size)
-        self._z_sampler = builder.build().sampler
+            builder = SamplerBuilderGrad(self.args.patch_size, self._image,
+                                         self.args.x_axis, self.args.y_axis,
+                                         self.args.z_axis, self.args.voxel_size,
+                                         (4, 4, 1), (2, 2, 1))
+            builder.build()
+            self._xy_sampler = builder.sampler_xy
+            self._z_sampler = builder.sampler_z
 
     def _create_trainer(self):
         self._trainer = Trainer(self._train_contents, self._xy_sampler,
