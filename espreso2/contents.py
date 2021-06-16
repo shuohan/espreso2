@@ -49,7 +49,10 @@ class ContentsBuilder:
 
     def _create_printer(self):
         attrs = self.contents.value_attrs
-        printer = TqdmPrinter(attrs=attrs, name=self._get_name())
+        if self.args.printer_mode == 'tqdm':
+            printer = TqdmPrinter(attrs=attrs, name=self._get_name())
+        elif self.args.printer_mode == 'text':
+            printer = Printer(attrs=attrs)
         self.contents.register(printer)
 
     def _get_name(self):

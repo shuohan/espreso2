@@ -40,6 +40,8 @@ parser.add_argument('-N', '--no-augmentation', action='store_true')
 parser.add_argument('-m', '--symm-slice-profile', action='store_true')
 parser.add_argument('-t', '--boundary-loss-weight', default=10, type=float)
 parser.add_argument('-T', '--center-loss-weight', default=1, type=float)
+parser.add_argument('-r', '--printer-mode', default='tqdm',
+                    choices={'text', 'tqdm'})
 
 args = parser.parse_args()
 
