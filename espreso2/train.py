@@ -10,6 +10,7 @@ from torch.optim import Adam
 from pathlib import Path
 from enum import Enum
 from scipy.signal import gaussian
+from torch.optim.lr_scheduler import StepLR
 
 from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
@@ -39,6 +40,7 @@ class TrainerBuilder:
         self._create_disc_net()
         self._create_sp_optim()
         self._create_disc_optim()
+        self._create_lr_schedulers()
         self._load_true_slice_profile()
         self._create_warmup_contents()
         self._create_train_contents()
@@ -97,6 +99,12 @@ class TrainerBuilder:
                                 lr=self.args.learning_rate,
                                 betas=(0.5, 0.999))
 
+    def _create_lr_schedulers(self):
+        step = self.args.lr_scheduler_step
+        gamma = self.args.lr_scheduler_gamma
+        self._sp_sch = StepLR(self._sp_optim, step, gamma=gamma)
+        self._disc_sch = StepLR(self._disc_optim, step, gamma=gamma)
+
     def _parse_image(self):
         self._nifti = nib.load(self.args.image_filename)
         self._image = self._nifti.get_fdata(dtype=np.float32)
@@ -154,9 +162,9 @@ class TrainerBuilder:
             Builder = TrainContentsBuilderDebug
         else:
             Builder = TrainContentsBuilder
-        builder = Builder(self._sp_net, self._disc, self._sp_optim,
-                          self._disc_optim, self.args)
-        self._train_contents = builder.build().contents
+        b = Builder(self._sp_net, self._disc, self._sp_optim, self._disc_optim,
+                    self._sp_sch, self._disc_sch, self.args)
+        self._train_contents = b.build().contents
 
     def _create_samplers(self):
         if self.args.sampler_mode == 'uniform':
@@ -273,6 +281,7 @@ class Trainer(_Trainer):
         disc_adv_loss = self._calc_adv_loss(disc_fake_prob, disc_real_prob)
         disc_adv_loss.backward()
         self.contents.disc_optim.step()
+        self.contents.disc_sch.step()
 
         self.contents.set_tensor_cuda('disc_fake', disc_fake.data, disc_fake.name)
         self.contents.set_tensor_cuda('disc_fake_blur', disc_fake_blur, disc_fake.name)
@@ -286,6 +295,7 @@ class Trainer(_Trainer):
         self.contents.set_tensor_cuda('disc_real_prob', disc_real_prob, disc_real.name)
 
         self.contents.set_value('disc_adv_loss', disc_adv_loss.item())
+        self.contents.set_value('lr', self.contents.sp_sch.get_last_lr()[0])
 
     def _train_sp_net(self):
         self.contents.sp_optim.zero_grad()
@@ -305,6 +315,7 @@ class Trainer(_Trainer):
         loss.backward()
         # torch.nn.utils.clip_grad_value_(self.contents.sp_net.parameters(), 1)
         self.contents.sp_optim.step()
+        self.contents.sp_sch.step()
         self.contents.sp_net.update_slice_profile()
 
         self.contents.set_tensor_cuda('sp_in', sp_in.data, sp_in.name)
