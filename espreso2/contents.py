@@ -2,6 +2,7 @@
 
 """
 import torch
+import torch.nn.functional as F
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -144,7 +145,7 @@ class TrainContentsBuilderDebug(TrainContentsBuilder):
         self.contents.register(saver)
 
     def _create_sp_evaluator(self):
-        true_sp = np.load(self.args.true_slice_profile)
+        true_sp = self.args.true_slice_profile_values
         sp_eval = SliceProfileEvaluator(true_sp, self.args.slice_profile_length,
                                         self.args.eval_step)
         self.contents.register(sp_eval)
@@ -304,7 +305,7 @@ class SliceProfileEvaluator(Observer):
 
     def _update(self):
         with torch.no_grad():
-            est_kernel = self.contents.sp_net.avg_sp.squeeze()
+            est_sp = self.contents.sp_net.avg_slice_profile.squeeze()
             mae = F.l1_loss(self.true_sp, est_sp).item()
         self.contents.set_value('sp_mae', mae)
 
