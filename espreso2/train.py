@@ -20,6 +20,16 @@ from .networks import SliceProfileNet, Discriminator
 
 
 class TrainerBuilder:
+    """Builds a :class:`Trainer` instance.
+
+    Example:
+        >>> builder = TrainerBuilder(args).build()
+        >>> trainer = builder.trainer
+
+    Args:
+        args (argparse.Namespace): The algorithm arguments.
+
+    """
     def __init__(self, args):
         self.args = args
         self._trainer = None
@@ -27,6 +37,7 @@ class TrainerBuilder:
 
     @property
     def trainer(self):
+        """Returns the trainer."""
         return self._trainer
 
     @property
@@ -34,6 +45,7 @@ class TrainerBuilder:
         return self._warmup
 
     def build(self):
+        """Builds the trainer."""
         self._specify_outputs()
         self._parse_image()
         self._create_sp_net()
@@ -201,11 +213,19 @@ class TrainerBuilder:
 
 
 class _Trainer:
+    """Abstract class to train the algorithm.
+
+    Args:
+        contents (espreso2.contents.TrainContents): The contents of training.
+        batch_size (int): The number of samples per mini-batch.
+
+    """
     def __init__(self, contents, batch_size):
         self.contents = contents
         self.batch_size = batch_size
 
     def train(self):
+        """Starts training."""
         self._sample_patch_indices()
         self.contents.start_observers()
         for i in self.contents.counter:
@@ -234,6 +254,25 @@ class _Trainer:
 
 
 class Trainer(_Trainer):
+    """Train the algorithm.
+
+    Example:
+        >>> trainer = Trainer(...)
+        >>> trainer.train()
+
+    Args:
+        contents (espreso2.contents.TrainContents): The contents of training.
+        sampler_xy (sssrlib.sample.Sampler): Samples patches with
+            high-resolution along the axis 0.
+        sampler_z (sssrlib.sample.Sampler): Samples patches with
+            low-resolution along the axis 0.
+        scale_factor (float): The downsampling scale factor (<=1).
+        batch_size (int): The number of samples per mini-batch.
+        boundary_loss_weight (float): The weight of boundary loss.
+        center_loss_weight (float): The weight of center loss.
+        smooth_loss_weight (float): The weight of smoothness loss (normally 0).
+
+    """
     def __init__(self, contents, sampler_xy, sampler_z, scale_factor,
                  batch_size, boundary_loss_weight, center_loss_weight,
                  smooth_loss_weight):
@@ -410,6 +449,17 @@ class Warmup(_Trainer):
 
     The main effect is to accumulate optimizer momentum towards a "bell-shaped"
     slice profile estimation.
+
+    Example:
+        >>> warmup = Warmup(...)
+        >>> warmup.train()
+
+    Args:
+        contents (espreso2.contents.TrainContents): The contents of training.
+        sampler (sssrlib.sample.Sampler): Samples patches with
+            high-resolution along the axis 0.
+        ref_sp (iterable[float]): The reference slice profile.
+        batch_size (int): The number of samples per mini-batch.
 
     """
     def __init__(self, contents, sampler, ref_sp, batch_size):

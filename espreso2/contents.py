@@ -21,6 +21,16 @@ from .utils import calc_fwhm
 
 
 class ContentsBuilder:
+    """Builds a :class:`Contents` instance.
+
+    Example:
+        >>> builder = ContentsBuilder().build()
+        >>> contents = builder.contents()
+
+    Args:
+        args (argparse.Namespace): The algorithm arguments.
+
+    """
     def __init__(self, args):
         self.args = args
         self._contents = None
@@ -30,6 +40,12 @@ class ContentsBuilder:
         return self._contents
 
     def build(self):
+        """Builds the contents.
+
+        Return:
+            self.
+
+        """
         self._counter = Counter('iter', self._get_num_iters())
         self._create_contents()
         self._set_observers()
@@ -88,6 +104,20 @@ class ContentsBuilder:
 
 
 class TrainContentsBuilder(ContentsBuilder):
+    """Builds a :class:`TrainContents` instance.
+
+    Args:
+        sp_net (torch.nn.Module): The slice profile network.
+        disc (torch.nn.Module): The discriminator.
+        sp_optim (torch.nn.optim.Optimizer): The slice profile optimizer.
+        disc_optim (torch.nn.optim.Optimizer): The discriminator optimizer.
+        sp_sch (torch.nn.optim.lr_scheduler._LRScheduler): The slice profile
+            learning rate scheduler.
+        disc_sch (torch.nn.optim.lr_scheduler._LRScheduler): The discriminator
+            learning rate scheduler.
+        args (argparse.Namespace): The algorithm arguments.
+
+    """
     def __init__(self, sp_net, disc, sp_optim, disc_optim, sp_sch, disc_sch, args):
         super().__init__(args)
         self.sp_net = sp_net
@@ -117,9 +147,12 @@ class TrainContentsBuilder(ContentsBuilder):
 
     def _get_slice_profile_dirname(self):
         return self.args.output_slice_profile_dirname
-    
+
 
 class TrainContentsBuilderDebug(TrainContentsBuilder):
+    """Builds a :class:`TrainContentsDebug` instance.
+
+    """
     def _create_contents(self):
          cnt = TrainContentsDebug(self.sp_net, self.disc, self.sp_optim,
                                   self.disc_optim, self.sp_sch, self.disc_sch,
@@ -159,6 +192,14 @@ class TrainContentsBuilderDebug(TrainContentsBuilder):
 
 
 class WarmupContentsBuilder(ContentsBuilder):
+    """Builds a :class:`WarmupContents` instance.
+
+    Args:
+        model (torch.nn.Module): The slice profile network.
+        optim (torch.nn.Module): The slice profile optimizer.
+        args (argparse.Namespace): The algorithm arguments.
+
+    """
     def __init__(self, model, optim, args):
         self.model = model
         self.optim = optim
@@ -184,14 +225,35 @@ class WarmupContentsBuilder(ContentsBuilder):
 
 
 class TrainContents(Contents):
+    """Records the contents during training.
+
+    Attributes:
+        sp_net (torch.nn.Module): The slice profile network.
+        disc (torch.nn.Module): The discriminator.
+        sp_optim (torch.nn.optim.Optimizer): The slice profile optimizer.
+        disc_optim (torch.nn.optim.Optimizer): The discriminator optimizer.
+        sp_sch (torch.nn.optim.lr_scheduler._LRScheduler): The slice profile
+            learning rate scheduler.
+        disc_sch (torch.nn.optim.lr_scheduler._LRScheduler): The discriminator
+            learning rate scheduler.
+        counter (ptxl.abstract.Counter): The iteration counter.
+
+    """
     sp_attrs = ['slice_profile', 'avg_slice_profile']
+    """list: Names of the slice profies to save."""
+
     im_attrs = ['disc_real', 'disc_real_blur', 'disc_real_down',
                 'disc_real_down_t', 'disc_fake', 'disc_fake_blur',
                 'disc_fake_down', 'sp_in', 'sp_blur', 'sp_down', 'sp_t_in',
                 'sp_t_blur', 'sp_t_down', 'sp_t_down_t']
+    """list: Names of the images to save."""
+
     prob_attrs = ['disc_real_prob', 'disc_fake_prob', 'sp_prob', 'sp_t_prob']
+    """list: Names of the probability maps to save."""
+
     value_attrs = ['sp_adv_loss', 'sp_center_loss', 'sp_boundary_loss',
                    'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
+    """list: Names of the values to save."""
 
     def __init__(self, sp_net, disc, sp_optim, disc_optim, sp_sch, disc_sch,
                  counter):
@@ -233,13 +295,28 @@ class TrainContents(Contents):
 
 
 class TrainContentsDebug(TrainContents):
+    """Records the contents to save in debug mode."""
     value_attrs = TrainContents.value_attrs + ['sp_mae']
+    """list: Names of the values to save."""
 
 
 class WarmupContents(Contents):
+    """Records the contents during warm-up.
+
+    Attributes:
+        model (torch.nn.Module): The slice profile network.
+        optim (torch.nn.optim.Optimizer): The slice profile optimizer.
+        counter (ptxl.abstract.Counter): The iteration counter.
+
+    """
     sp_attrs = ['slice_profile', 'avg_slice_profile']
+    """list: Names of the slice profies to save."""
+
     im_attrs = ['patches', 'blur', 'ref_blur']
+    """list: Names of the images to save."""
+
     value_attrs = ['loss']
+    """list: Names of the values to save."""
 
     def __init__(self, model, optim, counter):
         super().__init__(model, optim, counter)
@@ -250,6 +327,9 @@ class WarmupContents(Contents):
 
 
 class ImageSaver(ImageSaver_):
+    """Saves the images during training.
+
+    """
     def _needs_to_update(self):
         rule1 = self.contents.counter.index1 % self.step == 0
         rule2 = self.contents.counter.has_reached_end()
@@ -257,6 +337,9 @@ class ImageSaver(ImageSaver_):
 
 
 class CheckpointSaver(CheckpointSaver_):
+    """Saves the checkpoints during training.
+
+    """
     def _needs_to_update(self):
         rule1 = self.contents.counter.index1 % self.step == 0
         rule2 = self.contents.counter.has_reached_end()
@@ -328,6 +411,9 @@ class SliceProfileEvaluator(Observer):
 
 
 class TqdmPrinter(TqdmPrinter_):
+    """Prints the warm-up/training progress.
+
+    """
     def __init__(self, decimals=4, attrs=[], name=''):
         super().__init__(decimals=decimals, attrs=attrs)
         self.name = name

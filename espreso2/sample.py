@@ -9,6 +9,25 @@ from sssrlib.utils import calc_avg_kernel, calc_foreground_mask
 
 
 class SamplerBuilder:
+    """Builds a :class:`sssrlib.sample.Sampler` instance.
+
+    Example:
+        >>> builder = SamplerBuilder(...).build()
+        >>> sampler_xy = builder.sampler_xy
+        >>> sampler_z = builder.sampler_z
+
+    Args:
+        patch_size (iterable[int]): The patch size to extract.
+        x (int): The index of the x-axis.
+        y (int): The index of the y-axis.
+        z (int): The index of the z-axis.
+        voxel_size (iterable[float]): The voxel size of the image.
+        weight_kernel_size (iterable[int]): The kernel size to suppress weights
+            using max-pooling.
+        weight_stride (iterable[int]): The stride to suppress weights
+            using max-pooling.
+
+    """
     def __init__(self, patch_size, image, x, y, z, voxel_size,
                  weight_kernel_size, weight_stride):
         self.image = image
@@ -24,13 +43,21 @@ class SamplerBuilder:
 
     @property
     def sampler_xy(self):
+        """Returns the sampler to extract patches with high-res along axis 0."""
         return self._sampler_xy
 
     @property
     def sampler_z(self):
+        """Returns the sampler to extract patches with low-res along axis 0."""
         return self._sampler_z
 
     def build(self):
+        """Builds the sampler.
+
+        Returns:
+            self.
+
+        """
         raise NotImplementedError
 
     def _build_patches(self, orient):
@@ -50,6 +77,9 @@ class SamplerBuilder:
 
 
 class SamplerBuilderUniform(SamplerBuilder):
+    """Builds a :class:`sssrlib.sample.Sampler` to uniformly sample patches.
+
+    """
     def build(self):
         samplers = list()
         for orient in ['xz', 'yz']:
@@ -62,6 +92,10 @@ class SamplerBuilderUniform(SamplerBuilder):
 
 
 class SamplerBuilderGrad(SamplerBuilder):
+    """Builds a :class:`sssrlib.sample.Sampler` to sample patches according to
+    image graidnets.
+
+    """
     @property
     def sampler_xy(self):
         return self._sampler_xy
@@ -96,6 +130,9 @@ class SamplerBuilderGrad(SamplerBuilder):
 
 
 class SamplerBuilderFG(SamplerBuilder):
+    """Builds a :class:`sssrlib.sample.Sampler` to sample patches in foreground.
+
+    """
     def build(self):
         samplers = list()
         agg_kernel = calc_avg_kernel(self.patch_size)

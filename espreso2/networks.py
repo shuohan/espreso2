@@ -7,6 +7,19 @@ import torch.nn.functional as F
 class _SliceProfileNet(nn.Sequential):
     """Abstract class for slice profile networks.
 
+    Note:
+        Call :meth:`update_slice_profile` after each update of network
+        parameters.
+
+    Args:
+        num_channels (int): The number of feature channels.
+        kernel_size (int): The size of kernel in convolutions.
+        num_convs (int): The number of convolutions.
+        sp_length (int): The lenght of the slice profile vector.
+        sp_avg_beta (float): The exponential average beta for the slice profile.
+            See :meth:`update_slice_profile` for more details.
+        symm_sp (bool): Enforce symmetry of the slice profile if ``True``.
+
     """
     def __init__(self, num_channels=256, kernel_size=3, num_convs=3,
                  sp_length=21, sp_avg_beta=0.99, symm_sp=False):
@@ -95,6 +108,7 @@ class _SliceProfileNet(nn.Sequential):
             % str(tuple(self.embeded_vector.size()))
 
     def forward(self, x):
+        """Convolves the slice profile with the input image."""
         return F.conv2d(x, self._sp)
 
 
@@ -123,6 +137,13 @@ class SliceProfileNetZP(_SliceProfileNet):
 
 class Discriminator(nn.Sequential):
     """Discriminator of patches.
+
+    Args:
+        nums_channels (iterable[int]): The number of feature channels of each
+            convolution.
+        kernel_sizes (iterable[iterable[int]]): The kernel size of each
+            convolution.
+        lrelu_neg_slope (float): The negative slope for leaky ReLUs.
 
     """
     def __init__(self, nums_channels=(64, 64, 64, 64),
