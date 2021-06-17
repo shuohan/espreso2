@@ -29,7 +29,7 @@ for image in ${images[@]}; do
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
-    ../scripts/train.py -i $image -o $outdir -I ${ni} -Z 4 -P 16 \
+    echo ../scripts/train.py -i $image -o $outdir -I ${ni} -Z 4 -P 16 \
         -s 1000 -M foreground -p ${sp} -g -e 100 -b ${bs} -S 4000 -d $wd
 done
 

@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '0.1.1'
+version = '0.2.0'
 
 with open('README.md') as readme:
     long_desc = readme.read()
@@ -13,12 +13,23 @@ setup(name='espreso2',
       version=version,
       packages=['espreso2'],
       license='GPLv3',
-      python_requires='>=3.7.7',
+      python_requires='>=3.7.10',
       scripts=['scripts/train.py', 'scripts/calc_fwhm.py'],
       long_description=long_desc,
+      install_requires=[
+          'torch>=1.8.1',
+          'numpy',
+          'scipy',
+          'nibabel',
+          'matplotlib',
+          'ptxl@git+https://gitlab.com/shan-deep-networks/ptxl.git@0.3.1',
+          'sssrlib@git+https://github.com/shuohan/sssrlib@0.3.0'
+      ],
       long_description_content_type='text/markdown',
       url='https://github.com/shuohan/espreso2.git',
-      classifiers=['Programming Language :: Python :: 3',
-                   'License :: OSI Approved :: MIT License',
-                   'Operating System :: OS Independent']
-      )
+      classifiers=[
+          'Programming Language :: Python :: 3',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          'Operating System :: OS Independent'
+      ]
+     )
