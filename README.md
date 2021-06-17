@@ -79,5 +79,5 @@ If `espreso2` is installed in the host machine, run
 train.py -i $image -o $output_dir
 ```
 
-[docker-image]: http://iacl.jhu.edu/~shuo/data/espreso2_011.tar.gz
+[docker-image]: registry.gitlab.com/shan-deep-networks/espreso2:0.2.0
 [singularity-image]: http://iacl.jhu.edu/~shuo/data/espreso2_011.sif

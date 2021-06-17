@@ -1,11 +1,11 @@
-FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
-RUN apt-get update && apt-get install -y git graphviz 
-RUN pip install scipy==1.5.4 \
-        nibabel==3.2.0 \
-        matplotlib==3.3.3 \
-        graphviz==0.14.2 \
-        git+https://github.com/shuohan/sssrlib@0.3.0 \
-        git+https://github.com/shuohan/ptxl@0.3.1 \
+FROM pytorch/pytorch:1.8.1-cuda10.2-cudnn7-runtime
+RUN apt-get update && apt-get install -y git
+RUN pip install scipy==1.6.3 \
+        nibabel==3.2.1 \
+        matplotlib==3.4.2 \
+        tqdm==4.51.0 \
+        improc3d==0.5.2 \
+        scikit-image==0.18.1 \
         git+https://github.com/shuohan/espreso2@0.2.0
 ENV MPLCONFIGDIR=/tmp/matplotlib
 CMD ["bash"]
