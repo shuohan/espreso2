@@ -1,19 +1,35 @@
 API
 ===
 
-Config
-------
-.. automodule:: spest.config
-    :members:
-
 Networks
 --------
 
-.. automodule:: spest.networks
+.. automodule:: espreso2.networks
+    :show-inheritance:
     :members:
 
 Losses
 ------
 
-.. automodule:: spest.losses
+.. automodule:: espreso2.losses
+    :members:
+
+Sample
+------
+
+.. automodule:: espreso2.sample
+    :show-inheritance:
+    :members:
+
+Train
+-----
+
+.. automodule:: espreso2.train
+    :show-inheritance:
+    :members:
+
+Utils
+-----
+
+.. automodule:: espreso2.utils
     :members:

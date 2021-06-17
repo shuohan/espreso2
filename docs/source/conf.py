@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'SPEst'
+project = 'ESPRESO2'
 copyright = '2020, Shuo Han'
 author = 'Shuo Han'
 
@@ -56,4 +56,4 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-autodoc_mock_imports = []
+autodoc_mock_imports = ['ptxl', 'sssrlib']
