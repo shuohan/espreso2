@@ -46,6 +46,16 @@ class GANLoss(torch.nn.Module):
         super().__init__()
 
     def forward(self, x, is_real):
+        """Calculates the loss.
+
+        Args:
+            x (torch.Tensor): The image.
+            is_real (bool): Whether the image is real.
+
+        Returns:
+            The calculated loss.
+
+        """
         target = torch.ones_like(x) if is_real else torch.zeros_like(x)
         loss = F.binary_cross_entropy_with_logits(x, target)
         return loss
@@ -58,12 +68,13 @@ class SmoothnessLoss(torch.nn.Module):
 
     .. math::
 
-        l = \lVert \nabla k \rVert_2^2,
+        l = \lVert \nabla k \rVert_2,
 
     where :math:`k` is the kernel, to encourage smoothness.
 
     """
     def forward(self, kernel):
+        """Calculates the loss for this kernel."""
         device = kernel.device
         operator = torch.tensor([1, -1], dtype=torch.float32, device=device)
         operator = operator[None, None, ..., None]
@@ -95,6 +106,7 @@ class CenterLoss(torch.nn.Module):
         self.register_buffer('locs', locs)
 
     def forward(self, kernel):
+        """Calculates the loss for this kernel."""
         kernel_center = torch.sum(kernel.squeeze() * self.locs)
         loss = F.mse_loss(kernel_center, self.center)
         return loss
@@ -109,8 +121,7 @@ class BoundaryLoss(torch.nn.Module):
 
         l = \sum_x | m(x) k(x) |
 
-    where :math:`m` is created from an inverted Gaussian function with the
-    center set to zero.
+    where :math:`m` is 0, 0, 1, 1, ..., 1, 1, 0, 0.
 
     """
     def __init__(self, kernel_length):
@@ -125,4 +136,5 @@ class BoundaryLoss(torch.nn.Module):
         return mask
 
     def forward(self, kernel):
+        """Calculates the loss for this kernel."""
         return torch.sum(torch.abs(kernel * self.mask))

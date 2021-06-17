@@ -5,7 +5,6 @@ SPEst: MRI Slice Selection Profile Estimation
    :maxdepth: 2
    :caption: Contents:
 
-   examples
    api
 
 
