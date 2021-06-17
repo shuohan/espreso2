@@ -65,10 +65,6 @@ class TrainerBuilder:
     def _specify_outputs(self):
         output_dirname = Path(self.args.output_dirname)
         output_dirname.mkdir(parents=True)
-        self.args.output_image_dirname \
-            = str(output_dirname.joinpath('patches'))
-        self.args.output_warmup_slice_profile_dirname \
-            = str(output_dirname.joinpath('patches_warmup'))
         self.args.output_slice_profile_dirname \
             = str(output_dirname.joinpath('slice_profiles'))
         self.args.output_warmup_slice_profile_dirname \
@@ -83,6 +79,12 @@ class TrainerBuilder:
             = str(output_dirname.joinpath('checkpoints'))
         self.args.output_warmup_checkpoint_dirname \
             = str(output_dirname.joinpath('checkpoints_warmup'))
+
+        if self.args.debug:
+            self.args.output_image_dirname \
+                = str(output_dirname.joinpath('patches'))
+            self.args.output_sampler_dirname \
+                = str(output_dirname.joinpath('sampler'))
 
     def _create_sp_net(self):
         self._sp_net = SliceProfileNet(num_channels=self.args.sp_num_channels,
@@ -190,6 +192,8 @@ class TrainerBuilder:
               self.args.weight_kernel_size, self.args.weight_stride).build()
         self._sampler_xy = b.sampler_xy
         self._sampler_z = b.sampler_z
+        if self.args.debug:
+            b.save_figures(self.args.output_sampler_dirname)
 
     def _create_trainer(self):
         self._trainer = Trainer(self._train_contents, self._sampler_xy,
