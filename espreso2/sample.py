@@ -1,4 +1,9 @@
+import torch
+import numpy as np
 from pathlib import Path
+from scipy.ndimage import binary_closing, binary_fill_holes
+from scipy.ndimage import label as find_cc
+from improc3d import calc_bbox3d, padcrop3d
 
 from sssrlib.patches import Patches, TransformedPatches
 from sssrlib.transform import Flip
@@ -90,13 +95,11 @@ class SamplerBuilderUniform(SamplerBuilder):
         for orient in ['xz', 'yz']:
             patches = self._build_patches(orient)
             trans_patches = self._build_trans_patches(patches)
+            w = self._calc_weights(patches, orient)
             samplers.extend([Sampler(p) for p in [patches] + trans_patches])
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
         return self
-
-    def save_figures(self, dirname):
-        pass
 
 
 class SamplerBuilderGrad(SamplerBuilder):
@@ -141,11 +144,56 @@ class SamplerBuilderGrad(SamplerBuilder):
         return weights
 
 
-class CalcFG:
-    def __init__(self, image):
-        self.fg_mask = calc_foreground_mask(image)
+class CalcHeadMask:
+    """Calculates a head mask.
+
+    This class first calculates a foreground mask using Ostu's threshold (three
+    classes case). The foreground mask is then closed and hole-filled. Finally,
+    the largest connected component is extracted from the filled mask.
+
+    Example:
+        >>> CalcHeadMask(patches).cc
+
+    Args:
+        patches (sssrlib.patches.Patches): Holds the image to calculate the head
+            mask from.
+
+    """
+    def __init__(self, patches):
+        self.patches = patches
+        self._fg_mask = calc_foreground_mask(self.patches.image)
+        self._cc = self._calc_largest_cc()
+
+    @property
+    def fg_mask(self):
+        """Returns the foreground mask calculated from Otsu's threshold."""
+        return self._fg_mask
+
+    @property
+    def cc(self):
+        """Returns the largest connected component."""
+        return self._cc.to(self.patches.image)
+
+    def _calc_largest_cc(self):
+        pad = 10
+        mask = self._fg_mask.cpu().numpy()
+        padded = np.pad(mask, pad)
+        filled = binary_closing(padded, iterations=pad)
+        filled = binary_fill_holes(filled)
+        filled = filled[pad:-pad, pad:-pad, pad:-pad]
+        assert filled.shape == mask.shape
+        labels, num_labels = find_cc(filled)
+        counts = np.bincount(labels.flatten())
+        for l in np.argsort(counts)[::-1]:
+            cc = labels == l
+            if filled[cc][0]:
+                break
+        cc = torch.Tensor(cc)
+        return cc
+
     def save_figures(self, dirname, d3=True):
-        save_fig(dirname, self.fg_mask, 'fg_mask', d3=d3)
+        save_fig(dirname, self._fg_mask, 'fg_mask', d3=d3)
+        save_fig(dirname, self._cc, 'cc', d3=d3)
 
 
 class SamplerBuilderFG(SamplerBuilder):
@@ -158,17 +206,19 @@ class SamplerBuilderFG(SamplerBuilder):
         for orient in ['xz', 'yz']:
             patches = self._build_patches(orient)
             trans_patches = self._build_trans_patches(patches)
-            calc_fg = CalcFG(patches.image)
-            agg = Aggregate(agg_kernel, (calc_fg.fg_mask, ))
-            w = SampleWeights(patches, agg.agg_images)
-            w = SuppressWeights(w, kernel_size=self.weight_kernel_size,
-                                stride=self.weight_stride)
-            self._figure_pool.append((orient, calc_fg))
-            self._figure_pool.append((orient, patches))
-            self._figure_pool.append((orient, agg))
-            self._figure_pool.append((orient, w))
+            w = self._calc_weights(patches, agg_kernel, orient)
             for p in [patches] + trans_patches:
                 samplers.append(Sampler(p, w.weights_flat, w.weights_mapping))
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
         return self
+
+    def _calc_weights(self, patches, agg_kernel, orient):
+        calc_mask = CalcHeadMask(patches)
+        weights = SampleWeights(patches, (calc_mask.cc, ))
+        weights = SuppressWeights(weights, kernel_size=self.weight_kernel_size,
+                                  stride=self.weight_stride)
+        self._figure_pool.append((orient, calc_mask))
+        self._figure_pool.append((orient, patches))
+        self._figure_pool.append((orient, weights))
+        return weights
