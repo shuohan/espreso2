@@ -1,7 +1,8 @@
-# ESPRESO2: Estimate the Slice Profile from a Single Image Only Version 2
+# ESPRESO2: Estimate the Slice Profile for Resolution Enhancement from a Single Image Only Version 2
 
-| **[Docker Image][docker-image]** | **[Singularity Image][singularity-image]** | **[Documentation][docs]** |
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
+| **[Paper][paper]** | **[Docker Image][docker-image]** | **[Singularity Image][singularity-image]** |
 
 ## Introduction
 
@@ -28,25 +29,24 @@ Example results of using it with [Zhao 2020](https://pubmed.ncbi.nlm.nih.gov/331
 ## Installation
 
 
-The [Docker image][docker-image] or [Singularity image][singularity-image] are recommended. To load the Docker image:
+The Docker image or [Singularity image][singularity-image] are recommended. To use the Docker image:
 
 ```bash
-gunzip espreso2_010.tar.gz
-docker load -i espreso2_010.tar
+docker pull registry.gitlab.com/shan-deep-networks/espreso2:0.2.0
 ```
 
-The [Singularity image][singularity-image] was built from the [Docker image][docker-image] with Singularity 3.7:
+The [Singularity image][singularity-image] was built from the Docker image with Singularity 3.7:
 
 ```bash
-sudo singularity build espreso2_011.sif docker-archive://espreso2_011.tar.gz
+sudo singularity build espreso2_020.sif docker-daemon://espreso2:0.2.0
 ```
 
-You might need to rebuilt the Singularity image to use it in a lower version of Singularity. See [this link](https://sylabs.io/guides/3.7/user-guide/singularity_and_docker.html#locally-available-images-stored-archives) for more details of building a Singularity image from a Docker `.tar` file.
+You might need to rebuilt the Singularity image to use it in a lower version of Singularity. See [this link](https://sylabs.io/guides/3.7/user-guide/singularity_and_docker.html#locally-available-images-cached-by-docker) for more details of building a Singularity image from a local Docker image.
 
 The other option is to use `pip`:
 
 ```bash
-pip install git+https://gitlab.com/shan-deep-networks/espreso2
+pip install git+https://github.com/shuohan/espreso2
 ```
 
 ## Usage
@@ -57,20 +57,20 @@ To use the Docker image, run
 image=/path/to/image
 output_dir=/path/to/output_dir
 docker run -v $image:$image -v $output_dir:$output_dir --user $(id -u):$(id -g) \
-    --rm --gpus device=0 -t espreso2:0.1.1 train.py -i $image -o $output_dir
+    --rm --gpus device=0 -t espreso2:0.2.0 train.py -i $image -o $output_dir
 ```
 
 The estimated slice profiles are stored as `$output_dir/result.npy` and `$output_dir/result.png`. To measure the FWHM of the estimated slice profile:
 
 ```bash
 docker run -v $image:$image -v $output_dir:$output_dir --user $(id -u):$(id -g) \
-    --rm --gpus device=0 -t espreso2:0.1.1 calc_fwhm.py $output_dir/result.npy
+    --rm --gpus device=0 -t espreso2:0.2.0 calc_fwhm.py $output_dir/result.npy
 ```
 
 To use the Singularity image, run
 ```bash
 singularity run -B $image:$image -B $output_dir:$output_dir --nv \
-    espreso2_011.sif train.py -i $image -o $output_dir
+    espreso2_020.sif train.py -i $image -o $output_dir
 ```
 
 If `espreso2` is installed in the host machine, run
@@ -79,5 +79,6 @@ If `espreso2` is installed in the host machine, run
 train.py -i $image -o $output_dir
 ```
 
-[docker-image]: registry.gitlab.com/shan-deep-networks/espreso2:0.2.0
+[docker-image]: https://gitlab.com/shan-deep-networks/espreso2/container_registry
 [singularity-image]: http://iacl.jhu.edu/~shuo/data/espreso2_011.sif
+[paper]: https://arxiv.org/pdf/2104.00100.pdf
