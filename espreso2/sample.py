@@ -95,7 +95,6 @@ class SamplerBuilderUniform(SamplerBuilder):
         for orient in ['xz', 'yz']:
             patches = self._build_patches(orient)
             trans_patches = self._build_trans_patches(patches)
-            w = self._calc_weights(patches, orient)
             samplers.extend([Sampler(p) for p in [patches] + trans_patches])
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
