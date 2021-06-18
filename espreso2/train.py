@@ -16,7 +16,7 @@ from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
 from .contents import WarmupContentsBuilder
 from .sample import SamplerBuilderUniform, SamplerBuilderGrad, SamplerBuilderFG
-from .sample import SamplerBuilderSimpleFG
+from .sample import SamplerBuilderSimpleFG, SamplerBuilderAggFG
 from .networks import SliceProfileNet, Discriminator
 
 
@@ -190,6 +190,8 @@ class TrainerBuilder:
             B = SamplerBuilderFG
         elif self.args.sampler_mode == 'simple_foreground':
             B = SamplerBuilderSimpleFG
+        elif self.args.sampler_mode == 'agg_foreground':
+            B = SamplerBuilderAggFG
         b = B(self.args.patch_size, self._image, self.args.x_axis,
               self.args.y_axis, self.args.z_axis, self.args.voxel_size,
               self.args.weight_kernel_size, self.args.weight_stride).build()

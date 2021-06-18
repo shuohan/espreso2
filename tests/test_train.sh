@@ -25,12 +25,12 @@ ne=5000
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-[0-9p]*\).*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-[0-9p]*\).*/\1/")
-    outdir=results_train_foreground # /ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}_in-${in}_bs-${bs}
+    outdir=results_train_agg-foreground # /ns-${ns}_flip_sw-${sw}_ie-${ie}_wd-${wd}_in-${in}_bs-${bs}
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     ../scripts/train.py -i $image -o $outdir -I ${ni} -Z 4 -P 16 \
-        -s 1000 -M foreground -p ${sp} -g -e 100 -b ${bs} -S 4000 -d $wd
+        -s 1000 -M agg_foreground -p ${sp} -g -e 100 -b ${bs} -S 4000 -d $wd
 done
 
 # docker run --gpus device=1 --rm \

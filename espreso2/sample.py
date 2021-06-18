@@ -138,7 +138,7 @@ class SamplerBuilderGrad(SamplerBuilder):
         agg = Aggregate(agg_kernel, (grad, ))
         weights = SampleWeights(patches, agg.agg_images)
         weights = SuppressWeights(weights, kernel_size=self.weight_kernel_size,
-                                  stride=weight_self.stride)
+                                  stride=self.weight_stride)
         self._figure_pool.append((orient, agg))
         self._figure_pool.append((orient, weights))
         return weights
@@ -265,6 +265,36 @@ class SamplerBuilderSimpleFG(SamplerBuilder):
         calc_mask = CalcHeadMaskSimple(patches)
         weights = SampleWeights(patches, (calc_mask.fg_mask, ))
         self._figure_pool.append((orient, calc_mask))
+        self._figure_pool.append((orient, patches))
+        self._figure_pool.append((orient, weights))
+        return weights
+
+
+class SamplerBuilderAggFG(SamplerBuilder):
+    """Builds a :class:`sssrlib.sample.Sampler` to sample patches in foreground.
+
+    """
+    def build(self):
+        samplers = list()
+        agg_kernel = calc_avg_kernel(self.patch_size)
+        for orient in ['xz', 'yz']:
+            patches = self._build_patches(orient)
+            trans_patches = self._build_trans_patches(patches)
+            w = self._calc_weights(patches, agg_kernel, orient)
+            for p in [patches] + trans_patches:
+                samplers.append(Sampler(p, w.weights_flat))
+        self._sampler_xy = SamplerCollection(*samplers)
+        self._sampler_z = self._sampler_xy
+        return self
+
+    def _calc_weights(self, patches, agg_kernel, orient):
+        calc_mask = CalcHeadMaskSimple(patches)
+        agg = Aggregate(agg_kernel, (calc_mask.fg_mask, ))
+        weights = SampleWeights(patches, agg.agg_images)
+        weights = SuppressWeights(weights, kernel_size=self.weight_kernel_size,
+                                  stride=self.weight_stride)
+        self._figure_pool.append((orient, calc_mask))
+        self._figure_pool.append((orient, agg))
         self._figure_pool.append((orient, patches))
         self._figure_pool.append((orient, weights))
         return weights
