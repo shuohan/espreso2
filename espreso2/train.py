@@ -198,7 +198,7 @@ class TrainerBuilder:
         self._sampler_xy = b.sampler_xy
         self._sampler_z = b.sampler_z
         if self.args.debug:
-            b.save_figures(self.args.output_sampler_dirname)
+            b.save_figures(self.args.output_sampler_dirname, d3=True)
 
     def _create_trainer(self):
         self._trainer = Trainer(self._train_contents, self._sampler_xy,

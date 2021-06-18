@@ -46,9 +46,9 @@ parser.add_argument('-O', '--smooth-loss-weight', default=0, type=float)
 parser.add_argument('-r', '--printer-mode', default='tqdm',
                     choices={'text', 'tqdm'})
 parser.add_argument('-E', '--weight-kernel-size', default=(4, 4, 1),
-                    type=float, nargs='+')
+                    type=int, nargs='+')
 parser.add_argument('-R', '--weight-stride', default=(2, 2, 1),
-                    type=float, nargs='+')
+                    type=int, nargs='+')
 parser.add_argument('-S', '--lr-scheduler-step', default=15000, type=int)
 parser.add_argument('-G', '--lr-scheduler-gamma', default=1, type=float)
 
