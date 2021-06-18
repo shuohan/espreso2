@@ -66,9 +66,9 @@ class SamplerBuilder:
         """
         raise NotImplementedError
 
-    def save_figures(self, dirname):
+    def save_figures(self, dirname, d3=False):
         for orient, obj in self._figure_pool:
-            obj.save_figures(Path(dirname, orient), d3=False)
+            obj.save_figures(Path(dirname, orient), d3=d3)
 
     def _build_patches(self, orient):
         if orient == 'xz':
