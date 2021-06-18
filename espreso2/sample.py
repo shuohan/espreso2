@@ -196,8 +196,28 @@ class CalcHeadMask:
         save_fig(dirname, self._cc, 'cc', d3=d3)
 
 
+class CalcHeadMaskSimple:
+    """Calculates a head mask using Ostu's thresholds (three classes).
+
+    """
+    def __init__(self, patches):
+        self.patches = patches
+        self._fg_mask = calc_foreground_mask(self.patches.image)
+
+    @property
+    def fg_mask(self):
+        """Returns the foreground mask."""
+        return self._fg_mask
+
+    def save_figures(self, dirname, d3=True):
+        save_fig(dirname, self._fg_mask, 'fg_mask', d3=d3)
+
+
 class SamplerBuilderFG(SamplerBuilder):
     """Builds a :class:`sssrlib.sample.Sampler` to sample patches in foreground.
+
+    :class:`sssrlib.sample.SuppressWeights` is used to reduced the number of
+    possible patches. The foreground mask is closed and hole-filled.
 
     """
     def build(self):
@@ -218,6 +238,32 @@ class SamplerBuilderFG(SamplerBuilder):
         weights = SampleWeights(patches, (calc_mask.cc, ))
         weights = SuppressWeights(weights, kernel_size=self.weight_kernel_size,
                                   stride=self.weight_stride)
+        self._figure_pool.append((orient, calc_mask))
+        self._figure_pool.append((orient, patches))
+        self._figure_pool.append((orient, weights))
+        return weights
+
+
+class SamplerBuilderSimpleFG(SamplerBuilder):
+    """Builds a :class:`sssrlib.sample.Sampler` to sample patches in foreground.
+
+    """
+    def build(self):
+        samplers = list()
+        agg_kernel = calc_avg_kernel(self.patch_size)
+        for orient in ['xz', 'yz']:
+            patches = self._build_patches(orient)
+            trans_patches = self._build_trans_patches(patches)
+            w = self._calc_weights(patches, agg_kernel, orient)
+            for p in [patches] + trans_patches:
+                samplers.append(Sampler(p, w.weights_flat))
+        self._sampler_xy = SamplerCollection(*samplers)
+        self._sampler_z = self._sampler_xy
+        return self
+
+    def _calc_weights(self, patches, agg_kernel, orient):
+        calc_mask = CalcHeadMaskSimple(patches)
+        weights = SampleWeights(patches, (calc_mask.fg_mask, ))
         self._figure_pool.append((orient, calc_mask))
         self._figure_pool.append((orient, patches))
         self._figure_pool.append((orient, weights))

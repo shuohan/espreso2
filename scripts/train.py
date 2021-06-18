@@ -29,8 +29,9 @@ parser.add_argument('-K', '--sp-kernel-size', default=3, type=int)
 parser.add_argument('-P', '--z-patch-size', default=16, type=int)
 parser.add_argument('-u', '--num-warmup-iters', default=100, type=int,
                     help='The number of warm-up iterations.')
-parser.add_argument('-M', '--sampler-mode', default='foreground',
-                    choices={'uniform', 'gradient', 'foreground'})
+parser.add_argument('-M', '--sampler-mode', default='simple_foreground',
+                    choices={'uniform', 'gradient', 'foreground',
+                             'simple_foreground'})
 parser.add_argument('-e', '--eval-step', default=float('inf'), type=int)
 parser.add_argument('-n', '--normalize', action='store_true')
 parser.add_argument('-B', '--sp-avg-beta', default=0.99, type=float)
