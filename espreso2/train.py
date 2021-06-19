@@ -86,6 +86,8 @@ class TrainerBuilder:
                 = str(output_dirname.joinpath('patches'))
             self.args.output_sampler_dirname \
                 = str(output_dirname.joinpath('sampler'))
+            self.args.output_arch_dirname \
+                = str(output_dirname.joinpath('arch'))
 
     def _create_sp_net(self):
         self._sp_net = SliceProfileNet(num_channels=self.args.sp_num_channels,
@@ -93,6 +95,11 @@ class TrainerBuilder:
                                        num_convs=self.args.sp_num_convs,
                                        sp_length=self.args.slice_profile_length,
                                        sp_avg_beta=self.args.sp_avg_beta).cuda()
+        if self.args.debug:
+            Path(self.args.output_arch_dirname).mkdir(parents=True)
+            filename = Path(self.args.output_arch_dirname, 'sp_net.txt')
+            with open(filename, 'w') as txt:
+                txt.write(self._sp_net.__str__())
 
     def _create_disc_net(self):
         ks = tuple(tuple(int(k) for k in dk.split(',')) for
@@ -102,6 +109,10 @@ class TrainerBuilder:
                              kernel_sizes=self.args.disc_kernel_sizes,
                              lrelu_neg_slope=self.args.disc_lrelu_neg_slope)
         self._disc = disc.cuda()
+        if self.args.debug:
+            filename = Path(self.args.output_arch_dirname, 'disc.txt')
+            with open(filename, 'w') as txt:
+                txt.write(self._disc.__str__())
 
     def _create_sp_optim(self):
         self._sp_optim = Adam(self._sp_net.parameters(),
