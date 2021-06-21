@@ -205,7 +205,8 @@ class TrainerBuilder:
             B = SamplerBuilderAggFG
         b = B(self.args.patch_size, self._image, self.args.x_axis,
               self.args.y_axis, self.args.z_axis, self.args.voxel_size,
-              self.args.weight_kernel_size, self.args.weight_stride).build()
+              self.args.weight_kernel_size, self.args.weight_stride,
+              self.args.augmentation).build()
         self._sampler_xy = b.sampler_xy
         self._sampler_z = b.sampler_z
         if self.args.debug:

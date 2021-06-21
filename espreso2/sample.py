@@ -34,7 +34,7 @@ class SamplerBuilder:
 
     """
     def __init__(self, patch_size, image, x, y, z, voxel_size,
-                 weight_kernel_size, weight_stride):
+                 weight_kernel_size, weight_stride, aug=False):
         self.image = image
         self.patch_size = patch_size
         self.x = x
@@ -43,6 +43,7 @@ class SamplerBuilder:
         self.voxel_size = voxel_size
         self.weight_kernel_size = weight_kernel_size
         self.weight_stride = weight_stride
+        self.aug = aug
         self._sampler_xy = None
         self._sampler_z = None
         self._figure_pool = list()
@@ -79,7 +80,10 @@ class SamplerBuilder:
                            z=self.z, voxel_size=self.voxel_size).cuda()
 
     def _build_trans_patches(self, patches):
-        return [TransformedPatches(patches, f) for f in self._build_flips()]
+        if self.aug:
+            return [TransformedPatches(patches, f) for f in self._build_flips()]
+        else:
+            return []
 
     def _build_flips(self):
         """Flips x, z, or xz."""
