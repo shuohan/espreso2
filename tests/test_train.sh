@@ -30,7 +30,7 @@ for image in ${images[@]}; do
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     ../scripts/train.py -i $image -o $outdir -I ${ni} -Z 4 -P 16 \
-        -s 1000 -M uniform -p ${sp} -g -e 100 -b ${bs} -S 4000 -d $wd
+        -s 1000 -p ${sp} -g -e 100 -b ${bs} -S 4000 -d $wd -g
 done
 
 # docker run --gpus device=1 --rm \
