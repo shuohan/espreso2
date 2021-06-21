@@ -51,6 +51,8 @@ parser.add_argument('-R', '--weight-stride', default=(2, 2, 1),
                     type=int, nargs='+')
 parser.add_argument('-S', '--lr-scheduler-step', default=15000, type=int)
 parser.add_argument('-G', '--lr-scheduler-gamma', default=1, type=float)
+parser.add_argument('-A', '--adam-betas', default=(0.5, 0.999), type=float,
+                    nargs='+')
 
 args = parser.parse_args()
 

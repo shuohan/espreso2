@@ -117,13 +117,13 @@ class TrainerBuilder:
     def _create_sp_optim(self):
         self._sp_optim = Adam(self._sp_net.parameters(),
                               lr=self.args.learning_rate,
-                              betas=(0.5, 0.999),
+                              betas=self.args.adam_betas,
                               weight_decay=self.args.sp_weight_decay)
 
     def _create_disc_optim(self):
         self._disc_optim = Adam(self._disc.parameters(),
                                 lr=self.args.learning_rate,
-                                betas=(0.5, 0.999))
+                                betas=self.args.adam_betas)
 
     def _create_lr_schedulers(self):
         step = self.args.lr_scheduler_step
