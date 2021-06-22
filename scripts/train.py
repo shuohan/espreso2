@@ -7,7 +7,7 @@ parser.add_argument('-i', '--image-filename', help='Input image filename.')
 parser.add_argument('-o', '--output-dirname', help='Output directory.')
 parser.add_argument('-b', '--batch-size', default=64, type=int,
                     help='The number of samples per mini-batch.')
-parser.add_argument('-I', '--num-iters', default=15000, type=int,
+parser.add_argument('-I', '--num-iters', default=20000, type=int,
                     help='The number of iterations.')
 parser.add_argument('-s', '--image-save-step', default=5000, type=int,
                     help='The image saving step.')
@@ -16,9 +16,9 @@ parser.add_argument('-L', '--slice-profile-length', default=21, type=int)
 parser.add_argument('-l', '--learning-rate', default=2e-4, type=float)
 parser.add_argument('-z', '--z-axis', default=2, type=int)
 parser.add_argument('-Z', '--image-save-zoom', default=1, type=int)
-parser.add_argument('-d', '--sp-weight-decay', default=2e-2, type=float)
+parser.add_argument('-d', '--sp-weight-decay', default=5e-3, type=float)
 parser.add_argument('-k', '--disc-kernel-sizes', nargs='+', type=str,
-                    default=('3,1', '3,1', '3,1', '1,1', '1,1'),
+                    default=('3,1', '3,1', '3,1', '3,1', '3,1'),
                     help='Comma separated, e.g., 3,1 3,1 1,1.')
 parser.add_argument('-w', '--disc-nums-channels', default=(64, 64, 64, 64),
                     nargs='+', type=int)

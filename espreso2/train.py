@@ -373,7 +373,7 @@ class Trainer(_Trainer):
 
         loss = self._calc_sp_loss(sp_prob, sp_t_prob)
         loss.backward()
-        # torch.nn.utils.clip_grad_value_(self.contents.sp_net.parameters(), 1)
+        # torch.nn.utils.clip_grad_value_(self.contents.sp_net.parameters(), 0.0001)
         self.contents.sp_optim.step()
         self.contents.sp_sch.step()
         self.contents.sp_net.update_slice_profile()
