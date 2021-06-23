@@ -23,7 +23,7 @@ parser.add_argument('-k', '--disc-kernel-sizes', nargs='+', type=str,
 parser.add_argument('-w', '--disc-nums-channels', default=(64, 64, 64, 64),
                     nargs='+', type=int)
 parser.add_argument('-a', '--disc-lrelu-neg-slope', default=0.1, type=float)
-parser.add_argument('-D', '--sp-num-convs', default=3, type=int)
+parser.add_argument('-D', '--sp-num-convs', default=2, type=int)
 parser.add_argument('-W', '--sp-num-channels', default=256, type=int)
 parser.add_argument('-K', '--sp-kernel-size', default=3, type=int)
 parser.add_argument('-P', '--z-patch-size', default=16, type=int)

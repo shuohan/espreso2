@@ -12,18 +12,20 @@ export CUDA_VISIBLE_DEVICES=0
 # images=(/data/smore_simu_same_fov/simu_data/scale-2p0_fwhm-2p0/sub-OAS30004_ses-d1101_T2w_initnorm_scale-2p0_fwhm-2p0.nii.gz)
 # images=(/data/smore_simu_same_fov/simu_data/scale-2p0_fwhm-1p0/sub-OAS30004_ses-d1101_T2w_initnorm_scale-2p0_fwhm-1p0.nii.gz)
 # images=(/data/smore_simu_same_fov/orig_data/sub-OAS30004_ses-d1101_T2w_initnorm.nii.gz)
-# images=(/data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_scale-4p9_fwhm-2p45.nii.gz)
-images=($(ls -r /data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_*.nii.gz))
+images=(/data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_scale-4p9_fwhm-2p45.nii.gz
+        /data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_scale-4p9_fwhm-6p125.nii.gz)
+# images=(/data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_scale-4p9_fwhm-6p125.nii.gz)
+# images=($(ls -r /data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_*.nii.gz))
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-[0-9p]*\).*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-[0-9p]*\).*/\1/")
-    outdir=results_train_wd-2e-3_bs-128_ni-5000_lr-1e-3/$(basename $image | sed "s/\.nii\.gz//")
+    outdir=results_train_warmup/$(basename $image | sed "s/\.nii\.gz//")
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     ../scripts/train.py -i $image -o $outdir -I 5000 -Z 4 \
-        -s 1000 -p ${sp} -g -e 100 -l 1e-3 -d 2e-3 -b 128
+        -s 1000 -p ${sp} -g -e 100 -l 1e-3 -d 1e-2 -b 128 -u 1
 done
 
 # docker run --gpus device=1 --rm \

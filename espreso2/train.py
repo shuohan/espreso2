@@ -10,7 +10,6 @@ from torch.optim import Adam
 from pathlib import Path
 from enum import Enum
 from scipy.signal import gaussian
-from torch.optim.lr_scheduler import StepLR, OneCycleLR
 
 from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
@@ -53,7 +52,6 @@ class TrainerBuilder:
         self._create_disc_net()
         self._create_sp_optim()
         self._create_disc_optim()
-        self._create_lr_schedulers()
         self._load_true_slice_profile()
         self._create_warmup_contents()
         self._create_train_contents()
@@ -115,23 +113,13 @@ class TrainerBuilder:
                 txt.write(self._disc.__str__())
 
     def _create_sp_optim(self):
-        self._sp_optim = Adam(self._sp_net.parameters(),
-                              lr=self.args.learning_rate,
+        self._sp_optim = Adam(self._sp_net.parameters(), lr=1e-3,
                               betas=self.args.adam_betas,
                               weight_decay=self.args.sp_weight_decay)
 
     def _create_disc_optim(self):
-        self._disc_optim = Adam(self._disc.parameters(),
-                                lr=self.args.learning_rate,
+        self._disc_optim = Adam(self._disc.parameters(), lr=1e-3,
                                 betas=self.args.adam_betas)
-
-    def _create_lr_schedulers(self):
-        self._sp_sch = OneCycleLR(self._sp_optim,
-                                  max_lr=self.args.learning_rate,
-                                  total_steps=self.args.num_iters)
-        self._disc_sch = OneCycleLR(self._disc_optim,
-                                    max_lr=self.args.learning_rate,
-                                    total_steps=self.args.num_iters)
 
     def _parse_image(self):
         self._nifti = nib.load(self.args.image_filename)
@@ -191,7 +179,7 @@ class TrainerBuilder:
         else:
             Builder = TrainContentsBuilder
         b = Builder(self._sp_net, self._disc, self._sp_optim, self._disc_optim,
-                    self._sp_sch, self._disc_sch, self.args)
+                    self.args)
         self._train_contents = b.build().contents
 
     def _create_samplers(self):
@@ -249,12 +237,16 @@ class _Trainer:
 
     def train(self):
         """Starts training."""
+        self._start()
         self._sample_patch_indices()
         self.contents.start_observers()
         for i in self.contents.counter:
             self._train()
             self.contents.notify_observers()
         self.contents.close_observers()
+
+    def _start(self):
+        pass
 
     def _train(self):
         raise NotImplementedError
@@ -315,6 +307,9 @@ class Trainer(_Trainer):
         self._center_loss_func = CenterLoss(sp_length).cuda()
         self._boundary_loss_func = BoundaryLoss(sp_length).cuda()
         self._smooth_loss_func = SmoothnessLoss().cuda()
+
+    def _start(self):
+        self.contents.build_schedulers()
 
     def _train(self):
         self._train_disc()
