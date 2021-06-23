@@ -20,12 +20,12 @@ images=(/data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-[0-9p]*\).*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-[0-9p]*\).*/\1/")
-    outdir=results_train_warmup/$(basename $image | sed "s/\.nii\.gz//")
+    outdir=results_train_warmup_wd-5e-2/$(basename $image | sed "s/\.nii\.gz//")
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     ../scripts/train.py -i $image -o $outdir -I 5000 -Z 4 \
-        -s 1000 -p ${sp} -g -e 100 -l 1e-3 -d 1e-2 -b 128 -u 1
+        -s 1000 -p ${sp} -g -e 100 -l 1e-3 -d 5e-2 -b 128 -u 0
 done
 
 # docker run --gpus device=1 --rm \

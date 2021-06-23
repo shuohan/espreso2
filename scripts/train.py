@@ -66,7 +66,8 @@ from espreso2.train import TrainerBuilder
 warnings.filterwarnings('ignore')
 builder = TrainerBuilder(args)
 builder.build()
-builder.warmup.train()
+if args.num_warmup_iters > 0:
+    builder.warmup.train()
 builder.trainer.train()
 
 filename = 'iter-%d_sample-1_2_avg-slice-profile' % args.num_iters
