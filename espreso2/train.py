@@ -10,7 +10,7 @@ from torch.optim import Adam
 from pathlib import Path
 from enum import Enum
 from scipy.signal import gaussian
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, OneCycleLR
 
 from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
@@ -126,10 +126,12 @@ class TrainerBuilder:
                                 betas=self.args.adam_betas)
 
     def _create_lr_schedulers(self):
-        step = self.args.lr_scheduler_step
-        gamma = self.args.lr_scheduler_gamma
-        self._sp_sch = StepLR(self._sp_optim, step, gamma=gamma)
-        self._disc_sch = StepLR(self._disc_optim, step, gamma=gamma)
+        self._sp_sch = OneCycleLR(self._sp_optim,
+                                  max_lr=self.args.learning_rate,
+                                  total_steps=self.args.num_iters)
+        self._disc_sch = OneCycleLR(self._disc_optim,
+                                    max_lr=self.args.learning_rate,
+                                    total_steps=self.args.num_iters)
 
     def _parse_image(self):
         self._nifti = nib.load(self.args.image_filename)
