@@ -279,7 +279,7 @@ class TrainContents(Contents):
     """list: Names of the probability maps to save."""
 
     value_attrs = ['sp_adv_loss', 'sp_center_loss', 'sp_boundary_loss',
-                   'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
+                   'sp_peak', 'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
     """list: Names of the values to save."""
 
     def __init__(self, sp_net, disc, sp_optim, disc_optim, sch_builder, counter):

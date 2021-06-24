@@ -138,3 +138,18 @@ class BoundaryLoss(torch.nn.Module):
     def forward(self, kernel):
         """Calculates the loss for this kernel."""
         return torch.sum(torch.abs(kernel * self.mask))
+
+
+class PeakLoss(torch.nn.Module):
+    def forward(self, kernel):
+        device = kernel.device
+        op_f = torch.tensor([1, -1], dtype=torch.float32, device=device)
+        op_b = torch.tensor([-1, 1], dtype=torch.float32, device=device)
+        op_f = op_f[None, None, ..., None]
+        op_b = op_b[None, None, ..., None]
+        diff_f = F.conv2d(F.pad(kernel, (0, 0, 0, 1)), op_f)
+        diff_b = F.conv2d(F.pad(kernel, (0, 0, 1, 0)), op_b)
+        diff = F.relu(diff_f * diff_b).squeeze()
+        mid_ind = kernel.shape[2] // 2
+        result = torch.sum(diff[:mid_ind]) + torch.sum(diff[mid_ind+1:])
+        return result

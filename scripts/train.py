@@ -41,8 +41,9 @@ parser.add_argument('-g', '--debug', action='store_true')
 parser.add_argument('-U', '--augmentation', action='store_true')
 parser.add_argument('-m', '--symm-slice-profile', action='store_true')
 parser.add_argument('-t', '--boundary-loss-weight', default=10, type=float)
-parser.add_argument('-T', '--center-loss-weight', default=1, type=float)
+parser.add_argument('-T', '--center-loss-weight', default=100, type=float)
 parser.add_argument('-O', '--smooth-loss-weight', default=0, type=float)
+parser.add_argument('-q', '--peak-loss-weight', default=100, type=float)
 parser.add_argument('-r', '--printer-mode', default='tqdm',
                     choices={'text', 'tqdm'})
 parser.add_argument('-E', '--weight-kernel-size', default=(4, 4, 1),
