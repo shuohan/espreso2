@@ -147,9 +147,12 @@ class PeakLoss(torch.nn.Module):
         op_b = torch.tensor([-1, 1], dtype=torch.float32, device=device)
         op_f = op_f[None, None, ..., None]
         op_b = op_b[None, None, ..., None]
-        diff_f = F.conv2d(F.pad(kernel, (0, 0, 0, 1)), op_f)
-        diff_b = F.conv2d(F.pad(kernel, (0, 0, 1, 0)), op_b)
-        diff = F.relu(diff_f * diff_b).squeeze()
+        diff_f = F.conv2d(F.pad(kernel, (0, 0, 0, 1)), op_f).squeeze()
+        diff_b = F.conv2d(F.pad(kernel, (0, 0, 1, 0)), op_b).squeeze()
         mid_ind = kernel.shape[2] // 2
-        result = torch.sum(diff[:mid_ind]) + torch.sum(diff[mid_ind+1:])
+        result = torch.sum(F.relu(diff_f[:mid_ind])) \
+            + torch.sum(F.relu(-diff_f[mid_ind:]))
+        # result = torch.tensor(0).float().cuda()
+        # diff = F.relu(diff_f * diff_b).squeeze()
+        # result = torch.sum(diff[:mid_ind]) + torch.sum(diff[mid_ind+1:])
         return result
