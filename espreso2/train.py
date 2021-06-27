@@ -10,9 +10,8 @@ from torch.optim import Adam
 from pathlib import Path
 from enum import Enum
 from scipy.signal import gaussian
-from torch.optim.lr_scheduler import StepLR
 
-from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss
+from .losses import GANLoss, SmoothnessLoss, CenterLoss, BoundaryLoss, PeakLoss
 from .contents import TrainContentsBuilder, TrainContentsBuilderDebug
 from .contents import WarmupContentsBuilder
 from .sample import SamplerBuilderUniform, SamplerBuilderGrad, SamplerBuilderFG
@@ -53,7 +52,6 @@ class TrainerBuilder:
         self._create_disc_net()
         self._create_sp_optim()
         self._create_disc_optim()
-        self._create_lr_schedulers()
         self._load_true_slice_profile()
         self._create_warmup_contents()
         self._create_train_contents()
@@ -86,13 +84,22 @@ class TrainerBuilder:
                 = str(output_dirname.joinpath('patches'))
             self.args.output_sampler_dirname \
                 = str(output_dirname.joinpath('sampler'))
+            self.args.output_arch_dirname \
+                = str(output_dirname.joinpath('arch'))
 
     def _create_sp_net(self):
+        symm_sp = not(self.args.no_symm_slice_profile)
         self._sp_net = SliceProfileNet(num_channels=self.args.sp_num_channels,
                                        kernel_size=self.args.sp_kernel_size,
                                        num_convs=self.args.sp_num_convs,
                                        sp_length=self.args.slice_profile_length,
-                                       sp_avg_beta=self.args.sp_avg_beta).cuda()
+                                       sp_avg_beta=self.args.sp_avg_beta,
+                                       symm_sp=symm_sp).cuda()
+        if self.args.debug:
+            Path(self.args.output_arch_dirname).mkdir(parents=True)
+            filename = Path(self.args.output_arch_dirname, 'sp_net.txt')
+            with open(filename, 'w') as txt:
+                txt.write(self._sp_net.__str__())
 
     def _create_disc_net(self):
         ks = tuple(tuple(int(k) for k in dk.split(',')) for
@@ -102,23 +109,21 @@ class TrainerBuilder:
                              kernel_sizes=self.args.disc_kernel_sizes,
                              lrelu_neg_slope=self.args.disc_lrelu_neg_slope)
         self._disc = disc.cuda()
+        if self.args.debug:
+            filename = Path(self.args.output_arch_dirname, 'disc.txt')
+            with open(filename, 'w') as txt:
+                txt.write(self._disc.__str__())
 
     def _create_sp_optim(self):
         self._sp_optim = Adam(self._sp_net.parameters(),
-                              lr=self.args.learning_rate,
-                              betas=(0.5, 0.999),
+                              lr=self.args.warmup_learning_rate,
+                              betas=self.args.adam_betas,
                               weight_decay=self.args.sp_weight_decay)
 
     def _create_disc_optim(self):
         self._disc_optim = Adam(self._disc.parameters(),
-                                lr=self.args.learning_rate,
-                                betas=(0.5, 0.999))
-
-    def _create_lr_schedulers(self):
-        step = self.args.lr_scheduler_step
-        gamma = self.args.lr_scheduler_gamma
-        self._sp_sch = StepLR(self._sp_optim, step, gamma=gamma)
-        self._disc_sch = StepLR(self._disc_optim, step, gamma=gamma)
+                                lr=self.args.warmup_learning_rate,
+                                betas=self.args.adam_betas)
 
     def _parse_image(self):
         self._nifti = nib.load(self.args.image_filename)
@@ -178,7 +183,7 @@ class TrainerBuilder:
         else:
             Builder = TrainContentsBuilder
         b = Builder(self._sp_net, self._disc, self._sp_optim, self._disc_optim,
-                    self._sp_sch, self._disc_sch, self.args)
+                    self.args)
         self._train_contents = b.build().contents
 
     def _create_samplers(self):
@@ -194,11 +199,12 @@ class TrainerBuilder:
             B = SamplerBuilderAggFG
         b = B(self.args.patch_size, self._image, self.args.x_axis,
               self.args.y_axis, self.args.z_axis, self.args.voxel_size,
-              self.args.weight_kernel_size, self.args.weight_stride).build()
+              self.args.weight_kernel_size, self.args.weight_stride,
+              self.args.augmentation).build()
         self._sampler_xy = b.sampler_xy
         self._sampler_z = b.sampler_z
         if self.args.debug:
-            b.save_figures(self.args.output_sampler_dirname)
+            b.save_figures(self.args.output_sampler_dirname, d3=True)
 
     def _create_trainer(self):
         self._trainer = Trainer(self._train_contents, self._sampler_xy,
@@ -206,7 +212,8 @@ class TrainerBuilder:
                                 self.args.batch_size,
                                 self.args.boundary_loss_weight,
                                 self.args.center_loss_weight,
-                                self.args.smooth_loss_weight)
+                                self.args.smooth_loss_weight,
+                                self.args.peak_loss_weight)
 
     def _create_warmup(self):
         ref_sp = create_warmup_sp('impulse', self.args.slice_profile_length)
@@ -235,12 +242,16 @@ class _Trainer:
 
     def train(self):
         """Starts training."""
+        self._start()
         self._sample_patch_indices()
         self.contents.start_observers()
         for i in self.contents.counter:
             self._train()
             self.contents.notify_observers()
         self.contents.close_observers()
+
+    def _start(self):
+        pass
 
     def _train(self):
         raise NotImplementedError
@@ -284,7 +295,7 @@ class Trainer(_Trainer):
     """
     def __init__(self, contents, sampler_xy, sampler_z, scale_factor,
                  batch_size, boundary_loss_weight, center_loss_weight,
-                 smooth_loss_weight):
+                 smooth_loss_weight, peak_loss_weight):
         self.contents = contents
         self.sampler_xy = sampler_xy
         self.sampler_z = sampler_z
@@ -293,6 +304,7 @@ class Trainer(_Trainer):
         self.boundary_loss_weight = boundary_loss_weight
         self.center_loss_weight = center_loss_weight
         self.smooth_loss_weight = smooth_loss_weight
+        self.peak_loss_weight = peak_loss_weight
         self._init_loss_funcs()
 
     def _init_loss_funcs(self):
@@ -301,6 +313,10 @@ class Trainer(_Trainer):
         self._center_loss_func = CenterLoss(sp_length).cuda()
         self._boundary_loss_func = BoundaryLoss(sp_length).cuda()
         self._smooth_loss_func = SmoothnessLoss().cuda()
+        self._peak_loss_func = PeakLoss().cuda()
+
+    def _start(self):
+        self.contents.build_schedulers()
 
     def _train(self):
         self._train_disc()
@@ -361,7 +377,7 @@ class Trainer(_Trainer):
 
         loss = self._calc_sp_loss(sp_prob, sp_t_prob)
         loss.backward()
-        # torch.nn.utils.clip_grad_value_(self.contents.sp_net.parameters(), 1)
+        # torch.nn.utils.clip_grad_value_(self.contents.sp_net.parameters(), 0.0001)
         self.contents.sp_optim.step()
         self.contents.sp_sch.step()
         self.contents.sp_net.update_slice_profile()
@@ -396,12 +412,18 @@ class Trainer(_Trainer):
         sp_adv_loss = -self._calc_adv_loss(sp_prob, sp_t_prob)
 
         sp = self.contents.sp_net.slice_profile
-        sp_center_loss = self._center_loss_func(sp)
         sp_boundary_loss = self._boundary_loss_func(sp)
+        sp_peak_loss = self._peak_loss_func(sp)
 
         sp_total_loss = sp_adv_loss \
-            + self.center_loss_weight * sp_center_loss \
-            + self.boundary_loss_weight * sp_boundary_loss
+            + self.boundary_loss_weight * sp_boundary_loss \
+            + self.peak_loss_weight * sp_peak_loss
+
+        if self.center_loss_weight > 0:
+            sp_center_loss = self._center_loss_func(sp)
+            sp_total_loss = sp_total_loss \
+                + self.center_loss_weight * sp_center_loss
+            self.contents.set_value('sp_center_loss', sp_center_loss.item())
 
         if self.smooth_loss_weight > 0:
             sp_smooth_loss = self._smooth_loss_func(sp)
@@ -409,8 +431,8 @@ class Trainer(_Trainer):
                 + self.smooth_loss_weight * sp_smooth_loss
             self.contents.set_value('sp_smooth_loss', sp_smooth_loss.item())
 
+        self.contents.set_value('sp_peak', sp_peak_loss.item())
         self.contents.set_value('sp_adv_loss', sp_adv_loss.item())
-        self.contents.set_value('sp_center_loss', sp_center_loss.item())
         self.contents.set_value('sp_boundary_loss', sp_boundary_loss.item())
         self.contents.set_value('sp_total_loss', sp_total_loss.item())
 

@@ -34,7 +34,7 @@ class SamplerBuilder:
 
     """
     def __init__(self, patch_size, image, x, y, z, voxel_size,
-                 weight_kernel_size, weight_stride):
+                 weight_kernel_size, weight_stride, aug=False):
         self.image = image
         self.patch_size = patch_size
         self.x = x
@@ -43,6 +43,7 @@ class SamplerBuilder:
         self.voxel_size = voxel_size
         self.weight_kernel_size = weight_kernel_size
         self.weight_stride = weight_stride
+        self.aug = aug
         self._sampler_xy = None
         self._sampler_z = None
         self._figure_pool = list()
@@ -66,24 +67,27 @@ class SamplerBuilder:
         """
         raise NotImplementedError
 
-    def save_figures(self, dirname):
+    def save_figures(self, dirname, d3=False):
         for orient, obj in self._figure_pool:
-            obj.save_figures(Path(dirname, orient), d3=False)
+            obj.save_figures(Path(dirname, orient), d3=d3)
+
+    def _get_orients(self):
+        return ['xz', 'xz_f0', 'xz_f2', 'xz_f02',
+                'yz', 'yz_f0', 'yz_f2', 'yz_f02']
 
     def _build_patches(self, orient):
+        tmp = orient.split('_')
+        orient = tmp[0]
+        flip_axes = [int(f) for f in tmp[1][1:]] if len(tmp) > 1 else None
         if orient == 'xz':
-            return Patches(self.patch_size, self.image, x=self.x, y=self.y,
-                           z=self.z, voxel_size=self.voxel_size).cuda()
+            patches = Patches(self.patch_size, self.image, x=self.x, y=self.y,
+                              z=self.z, voxel_size=self.voxel_size).cuda()
         elif orient == 'yz':
-            return Patches(self.patch_size, self.image, x=self.y, y=self.x,
-                           z=self.z, voxel_size=self.voxel_size).cuda()
-
-    def _build_trans_patches(self, patches):
-        return [TransformedPatches(patches, f) for f in self._build_flips()]
-
-    def _build_flips(self):
-        """Flips x, z, or xz."""
-        return Flip((0, )), Flip((1, )), Flip((0, 1))
+            patches = Patches(self.patch_size, self.image, x=self.y, y=self.x,
+                              z=self.z, voxel_size=self.voxel_size).cuda()
+        if flip_axes:
+            patches.image = torch.flip(patches.image, flip_axes)
+        return patches
 
 
 class SamplerBuilderUniform(SamplerBuilder):
@@ -92,10 +96,9 @@ class SamplerBuilderUniform(SamplerBuilder):
     """
     def build(self):
         samplers = list()
-        for orient in ['xz', 'yz']:
+        for orient in self._get_orients():
             patches = self._build_patches(orient)
-            trans_patches = self._build_trans_patches(patches)
-            samplers.extend([Sampler(p) for p in [patches] + trans_patches])
+            samplers.append(Sampler(patches))
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
         return self
@@ -222,12 +225,10 @@ class SamplerBuilderFG(SamplerBuilder):
     def build(self):
         samplers = list()
         agg_kernel = calc_avg_kernel(self.patch_size)
-        for orient in ['xz', 'yz']:
+        for orient in self._get_orients():
             patches = self._build_patches(orient)
-            trans_patches = self._build_trans_patches(patches)
             w = self._calc_weights(patches, agg_kernel, orient)
-            for p in [patches] + trans_patches:
-                samplers.append(Sampler(p, w.weights_flat, w.weights_mapping))
+            samplers.append(Sampler(patches, w.weights_flat, w.weights_mapping))
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
         return self
@@ -250,12 +251,10 @@ class SamplerBuilderSimpleFG(SamplerBuilder):
     def build(self):
         samplers = list()
         agg_kernel = calc_avg_kernel(self.patch_size)
-        for orient in ['xz', 'yz']:
+        for orient in self._get_orients():
             patches = self._build_patches(orient)
-            trans_patches = self._build_trans_patches(patches)
             w = self._calc_weights(patches, agg_kernel, orient)
-            for p in [patches] + trans_patches:
-                samplers.append(Sampler(p, w.weights_flat))
+            samplers.append(Sampler(patches, w.weights_flat))
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
         return self
@@ -276,12 +275,10 @@ class SamplerBuilderAggFG(SamplerBuilder):
     def build(self):
         samplers = list()
         agg_kernel = calc_avg_kernel(self.patch_size)
-        for orient in ['xz', 'yz']:
+        for orient in self._get_orients():
             patches = self._build_patches(orient)
-            trans_patches = self._build_trans_patches(patches)
             w = self._calc_weights(patches, agg_kernel, orient)
-            for p in [patches] + trans_patches:
-                samplers.append(Sampler(p, w.weights_flat))
+            samplers.append(Sampler(patches, w.weights_flat))
         self._sampler_xy = SamplerCollection(*samplers)
         self._sampler_z = self._sampler_xy
         return self

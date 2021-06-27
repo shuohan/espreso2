@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from torch.optim.lr_scheduler import OneCycleLR
 
 from ptxl.abstract import Contents
 from ptxl.abstract import Observer
@@ -118,14 +119,15 @@ class TrainContentsBuilder(ContentsBuilder):
         args (argparse.Namespace): The algorithm arguments.
 
     """
-    def __init__(self, sp_net, disc, sp_optim, disc_optim, sp_sch, disc_sch, args):
+    def __init__(self, sp_net, disc, sp_optim, disc_optim, args):
         super().__init__(args)
         self.sp_net = sp_net
         self.disc = disc
         self.sp_optim = sp_optim
         self.disc_optim = disc_optim
-        self.sp_sch = sp_sch
-        self.disc_sch = disc_sch
+        self.sch_builder = SchedulerBuilder(self.sp_optim, self.disc_optim,
+                                            self.args.learning_rate,
+                                            self.args.num_iters)
         self.args = args
 
     def _get_name(self):
@@ -136,8 +138,8 @@ class TrainContentsBuilder(ContentsBuilder):
 
     def _create_contents(self):
         self._contents = TrainContents(self.sp_net, self.disc, self.sp_optim,
-                                       self.disc_optim, self.sp_sch,
-                                       self.disc_sch, self._counter)
+                                       self.disc_optim, self.sch_builder,
+                                       self._counter)
 
     def _get_log_filename(self):
         return self.args.log_filename
@@ -155,7 +157,7 @@ class TrainContentsBuilderDebug(TrainContentsBuilder):
     """
     def _create_contents(self):
          cnt = TrainContentsDebug(self.sp_net, self.disc, self.sp_optim,
-                                  self.disc_optim, self.sp_sch, self.disc_sch,
+                                  self.disc_optim, self.sch_builder,
                                   self._counter)
          self._contents = cnt
 
@@ -224,6 +226,31 @@ class WarmupContentsBuilder(ContentsBuilder):
         return self.args.output_warmup_slice_profile_dirname
 
 
+class SchedulerBuilder:
+    def __init__(self, sp_optim, disc_optim, max_lr, total_steps):
+        self.sp_optim = sp_optim
+        self.disc_optim = disc_optim
+        self.max_lr = max_lr
+        self.total_steps = total_steps
+        self._sp_sch = None
+        self._disc_sch = None
+
+    @property
+    def sp_sch(self):
+        return self._sp_sch
+
+    @property
+    def disc_sch(self):
+        return self._disc_sch
+
+    def build(self):
+        self._sp_sch = OneCycleLR(self.sp_optim, max_lr=self.max_lr,
+                                  total_steps=self.total_steps)
+        self._disc_sch = OneCycleLR(self.disc_optim, max_lr=self.max_lr,
+                                    total_steps=self.total_steps)
+        return self
+
+
 class TrainContents(Contents):
     """Records the contents during training.
 
@@ -252,17 +279,15 @@ class TrainContents(Contents):
     """list: Names of the probability maps to save."""
 
     value_attrs = ['sp_adv_loss', 'sp_center_loss', 'sp_boundary_loss',
-                   'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
+                   'sp_peak', 'sp_smooth_loss', 'sp_total_loss', 'disc_adv_loss', 'lr']
     """list: Names of the values to save."""
 
-    def __init__(self, sp_net, disc, sp_optim, disc_optim, sp_sch, disc_sch,
-                 counter):
+    def __init__(self, sp_net, disc, sp_optim, disc_optim, sch_builder, counter):
         self.sp_net = sp_net
         self.disc = disc
         self.sp_optim = sp_optim
         self.disc_optim = disc_optim
-        self.sp_sch = sp_sch
-        self.disc_sch = disc_sch
+        self.sch_builder = sch_builder
         self.counter = counter
 
         self._values = dict()
@@ -274,6 +299,11 @@ class TrainContents(Contents):
             self.set_tensor_cuda(attr, None, name=None)
         for attr in self.value_attrs:
             self.set_value(attr, float('nan'))
+
+    def build_schedulers(self):
+        self.sch_builder.build()
+        self.sp_sch = self.sch_builder.sp_sch
+        self.disc_sch = self.sch_builder.disc_sch
 
     def get_model_state_dict(self):
         return {'sp_net': self.sp_net.state_dict(),
