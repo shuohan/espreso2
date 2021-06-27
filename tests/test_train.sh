@@ -18,24 +18,20 @@ export CUDA_VISIBLE_DEVICES=1
 # images=(/data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_scale-4p9_fwhm-7.nii.gz)
 images=($(ls -r /data/smore_simu_same_fov/espreso2_sample_valid/sub-OAS30050_ses-d0110_T2w_initnorm_*.nii.gz))
 
-wd=5e-3
-lr=1e-3
-peak=1
-nc=2
 ni=2000
 nu=80
+ul=1e-4
 
 for image in ${images[@]}; do
     fwhm=$(echo $image | sed "s/.*\(fwhm-[0-9p]*\).*/\1/")
     scale=$(echo $image | sed "s/.*\(scale-[0-9p]*\).*/\1/")
-    outdir=results_train/wd-${wd}_lr-${lr}_peak-${peak}_nu-${nu}_ni-${ni}/$(basename $image | sed "s/\.nii\.gz//")
+    outdir=results_train/nu-${nu}_ul-${ul}/$(basename $image | sed "s/\.nii\.gz//")
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
     # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     set -x
-    ../scripts/train.py -i $image -o $outdir -I ${ni} -Z 4 \
-        -s 200 -p ${sp} -g -e 100 -l $lr -d $wd -b 128 -u $nu \
-        -m -q ${peak} -N 1e-4
+    ../scripts/train.py -i $image -o $outdir -Z 4 \
+        -s 500 -p ${sp} -g -e 100 -u $nu -m -N ${ul} -T 0
     set +x
 done
 

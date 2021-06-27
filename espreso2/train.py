@@ -88,12 +88,13 @@ class TrainerBuilder:
                 = str(output_dirname.joinpath('arch'))
 
     def _create_sp_net(self):
+        symm_sp = not(self.args.no_symm_slice_profile)
         self._sp_net = SliceProfileNet(num_channels=self.args.sp_num_channels,
                                        kernel_size=self.args.sp_kernel_size,
                                        num_convs=self.args.sp_num_convs,
                                        sp_length=self.args.slice_profile_length,
                                        sp_avg_beta=self.args.sp_avg_beta,
-                                       symm_sp=self.args.symm_slice_profile).cuda()
+                                       symm_sp=symm_sp).cuda()
         if self.args.debug:
             Path(self.args.output_arch_dirname).mkdir(parents=True)
             filename = Path(self.args.output_arch_dirname, 'sp_net.txt')
@@ -411,14 +412,18 @@ class Trainer(_Trainer):
         sp_adv_loss = -self._calc_adv_loss(sp_prob, sp_t_prob)
 
         sp = self.contents.sp_net.slice_profile
-        sp_center_loss = self._center_loss_func(sp)
         sp_boundary_loss = self._boundary_loss_func(sp)
         sp_peak_loss = self._peak_loss_func(sp)
 
         sp_total_loss = sp_adv_loss \
-            + self.center_loss_weight * sp_center_loss \
             + self.boundary_loss_weight * sp_boundary_loss \
             + self.peak_loss_weight * sp_peak_loss
+
+        if self.center_loss_weight > 0:
+            sp_center_loss = self._center_loss_func(sp)
+            sp_total_loss = sp_total_loss \
+                + self.center_loss_weight * sp_center_loss
+            self.contents.set_value('sp_center_loss', sp_center_loss.item())
 
         if self.smooth_loss_weight > 0:
             sp_smooth_loss = self._smooth_loss_func(sp)
@@ -428,7 +433,6 @@ class Trainer(_Trainer):
 
         self.contents.set_value('sp_peak', sp_peak_loss.item())
         self.contents.set_value('sp_adv_loss', sp_adv_loss.item())
-        self.contents.set_value('sp_center_loss', sp_center_loss.item())
         self.contents.set_value('sp_boundary_loss', sp_boundary_loss.item())
         self.contents.set_value('sp_total_loss', sp_total_loss.item())
 
