@@ -143,7 +143,10 @@ class TrainerBuilder:
             raise RuntimeError('Scale factor should be less or equal to 1.')
 
     def _get_axis_order(self):
-        z = np.argmax(self.args.voxel_size)
+        if self.args.z_axis:
+            z = self.args.z_axis
+        else:
+            z = np.argmax(self.args.voxel_size)
         xy = list(range(len(self.args.voxel_size)))
         xy.remove(z)
         self.args.x_axis = int(xy[0])

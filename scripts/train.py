@@ -15,7 +15,7 @@ parser.add_argument('-p', '--true-slice-profile', default=None)
 parser.add_argument('-L', '--slice-profile-length', default=21, type=int)
 parser.add_argument('-l', '--learning-rate', default=1e-3, type=float)
 parser.add_argument('-N', '--warmup-learning-rate', default=1e-4, type=float)
-parser.add_argument('-z', '--z-axis', default=2, type=int)
+parser.add_argument('-z', '--z-axis', default=None, type=int)
 parser.add_argument('-Z', '--image-save-zoom', default=1, type=int)
 parser.add_argument('-d', '--sp-weight-decay', default=5e-3, type=float)
 parser.add_argument('-k', '--disc-kernel-sizes', nargs='+', type=str,

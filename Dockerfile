@@ -6,6 +6,6 @@ RUN pip install scipy==1.6.3 \
         tqdm==4.51.0 \
         improc3d==0.5.2 \
         scikit-image==0.18.1 \
-        git+https://github.com/shuohan/espreso2@0.3.0
+        git+https://github.com/shuohan/espreso2@0.3.1
 ENV MPLCONFIGDIR=/tmp/matplotlib
 CMD ["bash"]
