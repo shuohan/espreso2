@@ -32,13 +32,13 @@ Example results of using it with [Zhao 2020](https://pubmed.ncbi.nlm.nih.gov/331
 The Docker image or [Singularity image][singularity-image] are recommended. To use the Docker image:
 
 ```bash
-docker pull registry.gitlab.com/shan-deep-networks/espreso2:0.2.0
+docker pull registry.gitlab.com/shan-deep-networks/espreso2:0.3.1
 ```
 
-The [Singularity image][singularity-image] was built from the Docker image with Singularity 3.7:
+The [Singularity image][singularity-image] was built from the Docker image with Singularity 3.5.2:
 
 ```bash
-sudo singularity build espreso2_020.sif docker-daemon://espreso2:0.2.0
+sudo singularity build espreso2_031.sif docker-daemon://espreso2:0.3.1
 ```
 
 You might need to rebuilt the Singularity image to use it in a lower version of Singularity. See [this link](https://sylabs.io/guides/3.7/user-guide/singularity_and_docker.html#locally-available-images-cached-by-docker) for more details of building a Singularity image from a local Docker image.
@@ -57,20 +57,20 @@ To use the Docker image, run
 image=/path/to/image
 output_dir=/path/to/output_dir
 docker run -v $image:$image -v $output_dir:$output_dir --user $(id -u):$(id -g) \
-    --rm --gpus device=0 -t espreso2:0.2.0 train.py -i $image -o $output_dir
+    --rm --gpus device=0 -t espreso2:0.3.1 train.py -i $image -o $output_dir
 ```
 
 The estimated slice profiles are stored as `$output_dir/result.npy` and `$output_dir/result.png`. To measure the FWHM of the estimated slice profile:
 
 ```bash
 docker run -v $image:$image -v $output_dir:$output_dir --user $(id -u):$(id -g) \
-    --rm --gpus device=0 -t espreso2:0.2.0 calc_fwhm.py $output_dir/result.npy
+    --rm --gpus device=0 -t espreso2:0.3.1 calc_fwhm.py $output_dir/result.npy
 ```
 
 To use the Singularity image, run
 ```bash
 singularity run -B $image:$image -B $output_dir:$output_dir --nv \
-    espreso2_020.sif train.py -i $image -o $output_dir
+    espreso2_031.sif train.py -i $image -o $output_dir
 ```
 
 If `espreso2` is installed in the host machine, run
@@ -80,5 +80,5 @@ train.py -i $image -o $output_dir
 ```
 
 [docker-image]: https://gitlab.com/shan-deep-networks/espreso2/container_registry
-[singularity-image]: http://iacl.jhu.edu/~shuo/data/espreso2_011.sif
+[singularity-image]: http://iacl.jhu.edu/~shuo/data/espreso2_031.sif
 [paper]: https://arxiv.org/pdf/2104.00100.pdf
