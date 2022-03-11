@@ -27,7 +27,7 @@ setup(name='espreso2',
           'scipy',
           'nibabel',
           'matplotlib',
-          'ptxl@git+https://gitlab.com/shan-deep-networks/ptxl@0.3.1',
+          'ptxl@git+https://gitlab.com/shan-deep-networks/ptxl@0.3.2',
           'sssrlib@git+https://github.com/shuohan/sssrlib@0.3.0'
       ],
       long_description_content_type='text/markdown',
