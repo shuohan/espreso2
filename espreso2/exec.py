@@ -11,8 +11,8 @@ from .train import TrainerBuilder
 
 def train(args=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--image-filename', help='Input image filename.')
-    parser.add_argument('-o', '--output-dirname', help='Output directory.')
+    parser.add_argument('-i', '--image-filename', help='Input image filename.', required=True)
+    parser.add_argument('-o', '--output-dirname', help='Output directory.', required=True)
     parser.add_argument('-b', '--batch-size', default=128, type=int,
                         help='The number of samples per mini-batch.')
     parser.add_argument('-I', '--num-iters', default=2000, type=int,
