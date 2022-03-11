@@ -14,7 +14,12 @@ setup(name='espreso2',
       packages=['espreso2'],
       license='GPLv3',
       python_requires='>=3.7.10',
-      scripts=['scripts/train.py', 'scripts/calc_fwhm.py'],
+      entry_points={
+          'console_scripts': [
+              'espreso2-train=espreso2.exec:train',
+              'espreso2-fwhm=espreso2.exec:fwhm',
+          ]
+      },
       long_description=long_desc,
       install_requires=[
           'torch>=1.8.1',
@@ -32,4 +37,4 @@ setup(name='espreso2',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
           'Operating System :: OS Independent'
       ]
-     )
+      )
