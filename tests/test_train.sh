@@ -27,7 +27,7 @@ for image in ${images[@]}; do
     scale=$(echo $image | sed "s/.*\(scale-[0-9p]*\).*/\1/")
     outdir=results_train/nu-${nu}_ul-${ul}/$(basename $image | sed "s/\.nii\.gz//")
     sp=$(echo $image | sed "s/\.nii\.gz/.npy/")
-    # ../scripts/train.py -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
+    # espreso2-train -i $image -o $outdir -I ${ni} -p $sp -Z 4 -P 16 -g \
     #     -s 1000 -M foreground
     set -x
     ../scripts/train.py -i $image -o $outdir -Z 4 \
